@@ -26,7 +26,7 @@
   const unlockAt = (t) => (t.release ? Date.parse(t.release + (t.release.length === 10 ? 'T12:00:00Z' : '')) : Infinity);
   const isLocked = (t) => !t.youtube || Date.now() < unlockAt(t);
   const fmt = (s) => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
-  const slugify = (n) => n.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'file';
+  const slugify = (n, fb = 'file') => n.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || fb;
 
   const S = {
     tracks: [], links: {}, contact: null,
@@ -183,12 +183,14 @@
     if (S.yt && S.yt.stopVideo) S.yt.stopVideo();
   }
   /* back to idle: stop, drop the embed; the selection stays */
+  /* destroy() removes the player's div; make sure one exists for the next embed */
+  function ytHost() { if (!$('#yt')) { const d = document.createElement('div'); d.id = 'yt'; $('#scr').prepend(d); } }
   function reset() {
     stop();
     if (S.yt && S.yt.destroy) S.yt.destroy();
     S.yt = null; S.started = false; S.pos = 0;
     $('#pane').classList.remove('started');
-    const box = $('#scr'); if (!$('#yt', box)) { const d = document.createElement('div'); d.id = 'yt'; box.prepend(d); }
+    ytHost();
   }
   function setUrl() {
     const t = S.tracks[S.sel]; if (!t) return;
@@ -209,7 +211,7 @@
     } else {
       ensureYT(() => {
         if (S.yt) { S.yt.loadVideoById(S.tracks[S.sel].youtube); return; }
-        if (!$('#yt')) { const d = document.createElement('div'); d.id = 'yt'; $('#scr').prepend(d); }
+        ytHost();
         S.yt = new window.YT.Player('yt', {
           host: 'https://www.youtube-nocookie.com',
           videoId: S.tracks[S.sel].youtube,
@@ -295,7 +297,6 @@
   function renderProgress() {
     const pct = S.dur ? Math.min(100, (S.pos / S.dur) * 100) : 0;
     $('#segfill').style.width = pct + '%';
-    $('#waveon').style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)';
     $('#pos').textContent = fmt(S.pos); $('#dur').textContent = fmt(S.dur);
     const seg = $('#seg');
     seg.setAttribute('aria-valuemax', Math.floor(S.dur));
@@ -329,7 +330,7 @@
     $('#now').textContent = t.name; $('#now-album').textContent = t.album || '';
     $('#vname').textContent = t.name;
     $('#vstat').textContent = S.started ? (S.corrupt.has(S.sel) ? 'video: unreadable.' : t.name) : 'video: not loaded.';
-    renderArt(t); renderWave(t);
+    renderArt(t); renderWave();
     const msg = S.started ? (S.playing ? 'playing ' + t.name : 'paused') : '';
     if (msg !== S.said) { S.said = msg; $('#live').textContent = msg; }
     $$('[data-act=toggle]').forEach((b) => { b.setAttribute('aria-label', S.playing ? 'pause' : 'play'); $('.ip', b).setAttribute('d', S.playing ? ICON_PAUSE : ICON_PLAY); });
@@ -344,25 +345,47 @@
     );
     renderProgress();
   }
-  /* pane art: static text-free art of the selected file's album; build_site.py writes released albums only */
-  const albumSlug = (a) => a.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'dash';
-  /* data-dir is relative to the page that loaded; resolve it once, before pushState changes the URL */
-  const ARTDIR = new URL($('#art').dataset.dir, location.href).href;
-  /* rows scroll-margin-top follows the pinned block's height */
-  if (window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--pin', $('#pane').offsetHeight + 'px')).observe($('#pane'));
-  /* waveform peaks (computed at render time, tools/peaks.py) drawn as mirrored bars over the still art */
-  function renderWave(t) {
-    if (S.waveFor === t.name) return;
-    S.waveFor = t.name;
-    const p = t.peaks || [];
-    const d = p.map((v, i) => { const h = Math.max(1, v * 0.9); return 'M' + (i + 0.15) + ' ' + (50 - h / 2) + 'h0.7v' + h + 'h-0.7z'; }).join('');
-    ['#wave', '#waveon'].forEach((id) => { $(id).innerHTML = d ? '<path d="' + d + '"/>' : ''; });
-  }
+  /* the pane art is the album's animated svg, inlined in a shadow root so its styles stay scoped; paused unless playing */
+  const WPDIR = new URL($('#wp').dataset.dir, location.href).href, svgCache = {};  /* resolved once, before pushState changes the URL */
   function renderArt(t) {
-    const img = $('#art'); if (!t.album) return;
-        const src = ARTDIR + albumSlug(t.album) + '.svg';
-    img.onerror = () => { img.hidden = true; };
-    if (img.src !== src) { img.hidden = false; img.src = src; }
+    const host = $('#artsvg'); if (!t.album) return;
+    const slug = slugify(t.album, 'dash');
+    host.classList.toggle('paused', !S.playing);
+    if (host.dataset.slug === slug) return;
+    host.dataset.slug = slug;
+    (svgCache[slug] = svgCache[slug] || fetch(WPDIR + slug + '.svg').then((r) => r.ok ? r.text() : Promise.reject())).then((txt) => {
+      if (host.dataset.slug !== slug) return;
+      (host.shadowRoot || host.attachShadow({ mode: 'open' })).innerHTML =
+        '<style>:host{display:block}svg{display:block;width:100%;height:100%}:host(.paused) *{animation-play-state:paused!important}</style>'
+        + txt.replace('<svg ', '<svg preserveAspectRatio="xMidYMid slice" ');
+    }).catch(() => {});
+  }
+  /* rows scroll-margin-top follows the pinned block's height */
+  if (window.ResizeObserver) new ResizeObserver(([e]) => document.documentElement.style.setProperty('--pin', e.target.offsetHeight + 'px')).observe($('#pane'));
+  /* jittery waveform over the art, scaled by the track's recorded loudness (peaks.json, tools/peaks.py); runs only while playing */
+  const WN = 96, still = matchMedia('(prefers-reduced-motion: reduce)'), wave = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  $('#wave').append(wave);
+  const jit = (i, f) => { const x = Math.sin(i * 12.9898 + f * 78.233) * 43758.5453; return (x - Math.floor(x)) * 2 - 1; };
+  function drawWave(env, frame) {
+    let d = '';
+    for (let i = 0; i < WN; i++) d += (i ? 'L' : 'M') + (i * 120 / (WN - 1)).toFixed(1) + ' ' + (50 + jit(i, frame) * env * 45).toFixed(1);
+    wave.setAttribute('d', d);
+  }
+  function waveLoop() {
+    S.wraf = 0;
+    const t = S.tracks[S.sel], e = t && S.env[t.name.toLowerCase()];
+    if (!S.playing || !S.yt || !e || still.matches) { drawWave(0, 0); return; }
+    const sec = S.yt.getCurrentTime ? S.yt.getCurrentTime() : S.pos;
+    drawWave((e.charCodeAt(Math.min(e.length - 1, Math.floor(sec * 20))) || 0) / 255, Math.floor(sec * 30));
+    S.wraf = requestAnimationFrame(waveLoop);
+  }
+  function renderWave() {
+    if (!S.env) {
+      S.env = {};
+      fetch('/peaks.json').then((r) => r.json()).then((o) => { for (const k in o) S.env[k] = atob(o[k]); }).catch(() => {});
+    }
+    if (S.playing && !S.wraf) S.wraf = requestAnimationFrame(waveLoop);
+    else if (!S.playing) drawWave(0, 0);
   }
   function renderReadme() {
     const box = $('#rdlinks'); box.textContent = '';
@@ -462,16 +485,16 @@
     const img = $('#wp'), i = latest(); if (!img) return;
     img.onerror = () => { img.hidden = true; };
     if (i === null) { img.hidden = true; return; }
-    const src = img.dataset.dir + (S.tracks[i].album.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'dash') + '.svg';
+    const src = img.dataset.dir + slugify(S.tracks[i].album, 'dash') + '.svg';
     if (img.src !== src) { img.hidden = false; img.src = src; }
   }
   function renderStatus() { const i = latest(); $('#status').textContent = i === null ? 'sealed' : S.tracks[i].album; renderWallpaper(); }
   function render() { renderWindows(); renderIcons(); renderTasks(); renderRows(); renderPlayer(); }
 
   /* ---------- chrome: title bars, drag, clock ---------- */
-  function svgBtn(cls, label, d, stroke) {
+  function svgBtn(cls, label, d) {
     const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.setAttribute('aria-label', label);
-    b.innerHTML = '<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="' + d + '" fill="none" stroke-width="2"' + (stroke ? ' stroke="' + stroke + '"' : '') + '/></svg>';
+    b.innerHTML = '<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="' + d + '" fill="none" stroke-width="2"/></svg>';
     return b;
   }
   function buildBars() {
