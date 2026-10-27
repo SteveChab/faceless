@@ -46,7 +46,11 @@
       : fetch('/tracks.json', { cache: 'no-cache' }).then((r) => r.json());
     return src.then((d) => {
       const seen = {};
-      S.tracks = (d.tracks || []).map((t) => {
+      /* albums newest first (by their latest release), tracks keep their listed order within an album */
+      const raw = d.tracks || [], al = {}, first = {};
+      raw.forEach((t, i) => { const r = unlockAt(t); if (!(t.album in first)) first[t.album] = i; al[t.album] = Math.max(al[t.album] || 0, r === Infinity ? 1e15 : r); });
+      const sorted = raw.map((t, i) => [t, i]).sort((a, b) => (al[b[0].album] - al[a[0].album]) || (first[a[0].album] - first[b[0].album]) || (a[1] - b[1])).map((x) => x[0]);
+      S.tracks = sorted.map((t) => {
         let s = slugify(t.name);
         if (seen[s]) { seen[s] += 1; s = s + '-' + seen[s]; } else seen[s] = 1;
         return { ...t, slug: s };
@@ -195,7 +199,7 @@
     if (!fromHistory && S.sel !== i) S.hist.push(S.sel);
     S.sel = i; S.pos = 0; S.dur = t.secs || 0;
     setUrl();
-    $('#facade').hidden = true;
+    $('#facade').hidden = true; $('#w-pl').classList.add('started');
     if (S.corrupt.has(i)) { S.playing = false; render(); return; }
     S.playing = true;
     if (S.yt && S.yt.loadVideoById) {
@@ -541,8 +545,8 @@
     load().then(() => {
       const want = document.body.dataset.track;
       const hit = S.tracks.findIndex((t) => t.slug === want && !isLocked(t));
-      const l = latest();
-      S.sel = hit >= 0 ? hit : (l === null ? 0 : l);
+      const l = unlocked()[0];
+      S.sel = hit >= 0 ? hit : (l === undefined ? 0 : l);
       const t = S.tracks[S.sel];
       S.dur = t ? t.secs || 0 : 0;
       if (hit < 0) $('#facade span').textContent = 'file ready. press play to read.';

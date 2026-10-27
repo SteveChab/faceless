@@ -208,3 +208,6 @@ button{font:inherit;color:inherit}
   #w-ex{grid-column:auto}
 }
 @media (min-width:900px){.tkb .short{display:none}}
+
+/* before the first play the facade is the only play control */
+#w-pl:not(.started) [data-act=toggle]{display:none}
