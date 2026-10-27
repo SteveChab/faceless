@@ -15,8 +15,8 @@
     { head: 'file not found.', sub: 'recycle was never here.' },
     { head: 'restore failed.', sub: 'nothing was deleted. yet.' }
   ];
-  const LABELS = { ex: 'd:\\recovered', pl: 'player', rd: 'readme.txt' };
-  const SHORT = { ex: 'recovered', pl: 'player', rd: 'readme', sy: 'err' };
+  const LABELS = { ex: 'd:\\recovered', rd: 'readme.txt' };
+  const SHORT = { ex: 'recovered', rd: 'readme', sy: 'err' };
   const ICON_PLAY = 'M3 1l10 6-10 6z';
   const ICON_PAUSE = 'M3 1h3v12H3zM8 1h3v12H8z';
   const MAX_D = 'M1.5 1.5h7v7h-7z';
@@ -32,8 +32,8 @@
     tracks: [], links: {}, contact: null,
     sel: 0, playing: false, pos: 0, dur: 0, q: '', shuf: false,
     hist: [], bag: [], corrupt: new Set(),
-    wins: { ex: { o: true, m: false }, pl: { o: true, m: false }, rd: { o: false, m: false } },
-    order: ['rd', 'pl', 'ex'], max: null, mv: {}, exp: 'pl',
+    started: false, wins: { ex: { o: true, m: false }, rd: { o: false, m: false } },
+    order: ['rd', 'ex'], max: null, mv: {},
     dlg: null, lastErr: -1, opener: null,
     yt: null, ytLoading: false, poll: 0
   };
@@ -82,11 +82,9 @@
     if (!w.o || w.m) delete S.mv[k];
     S.wins[k] = { o: true, m: false };
     S.order = front(k);
-    if (mobile()) S.exp = k;
     render();
   }
   function minWin(k) {
-    if (mobile()) { if (S.exp === k) S.exp = null; render(); return; }
     S.wins[k] = { ...S.wins[k], m: true };
     if (S.max === k) S.max = null;
     render();
@@ -97,12 +95,11 @@
     const had = $('#w-' + k).contains(document.activeElement);
     S.wins[k] = { o: false, m: false };
     if (S.max === k) S.max = null;
-    if (k === 'pl') stop();
-    if (mobile() && S.exp === k) S.exp = topOpen();
+    if (k === 'ex') reset(); /* closing the window ends playback; reopening shows the same file, idle */
     render();
     if (had || document.activeElement === document.body) $('.dn .ico[data-k="' + k + '"]').focus(); /* back to where it opens from */
   }
-  function focusWin(k) { if (!mobile() && activeKey() !== k) { S.order = front(k); render(); } }
+  function focusWin(k) { if (activeKey() !== k) { S.order = front(k); render(); } }
   /* keyboard focus follows the window that was just opened or raised */
   function focusInto(k) {
     const el = $('#w-' + k);
@@ -111,7 +108,6 @@
   function taskClick(k) {
     if (k === 'sy') { focusDialog(); return; }
     const w = S.wins[k];
-    if (mobile()) { if (S.exp === k) { S.exp = null; render(); } else openWin(k); return; }
     if (w.m) openWin(k);
     else if (activeKey() === k) minWin(k);
     else openWin(k);
@@ -126,7 +122,6 @@
     }
     S.dlg = d; delete S.mv.sy;
     S.order = front('sy');
-    if (mobile()) S.exp = 'sy';
     render();
     focusDialog();
   }
@@ -138,7 +133,6 @@
   function dismiss() {
     S.dlg = null;
     S.order = S.order.filter((k) => k !== 'sy');
-    if (mobile()) S.exp = topOpen();
     render();
     let o = S.opener; S.opener = null;
     if ((!o || !document.contains(o)) && S.openerRow !== null) o = $('#rows tr[data-i="' + S.openerRow + '"] .rowbtn');
@@ -188,6 +182,14 @@
     S.playing = false; clearInterval(S.poll);
     if (S.yt && S.yt.stopVideo) S.yt.stopVideo();
   }
+  /* back to idle: stop, drop the embed; the selection stays */
+  function reset() {
+    stop();
+    if (S.yt && S.yt.destroy) S.yt.destroy();
+    S.yt = null; S.started = false; S.pos = 0;
+    $('#pane').classList.remove('started');
+    const box = $('#scr'); if (!$('#yt', box)) { const d = document.createElement('div'); d.id = 'yt'; box.prepend(d); }
+  }
   function setUrl() {
     const t = S.tracks[S.sel]; if (!t) return;
     const path = '/f/' + t.slug + '/';
@@ -199,7 +201,7 @@
     if (!fromHistory && S.sel !== i) S.hist.push(S.sel);
     S.sel = i; S.pos = 0; S.dur = t.secs || 0;
     setUrl();
-    $('#facade').hidden = true; $('#w-pl').classList.add('started');
+    S.started = true; $('#pane').classList.add('started');
     if (S.corrupt.has(i)) { S.playing = false; render(); return; }
     S.playing = true;
     if (S.yt && S.yt.loadVideoById) {
@@ -207,6 +209,7 @@
     } else {
       ensureYT(() => {
         if (S.yt) { S.yt.loadVideoById(S.tracks[S.sel].youtube); return; }
+        if (!$('#yt')) { const d = document.createElement('div'); d.id = 'yt'; $('#scr').prepend(d); }
         S.yt = new window.YT.Player('yt', {
           host: 'https://www.youtube-nocookie.com',
           videoId: S.tracks[S.sel].youtube,
@@ -221,7 +224,7 @@
   }
   function toggle() {
     if (S.corrupt.has(S.sel)) return;
-    if (!S.yt) { if (!S.wins.pl.o) openWin('pl'); play(S.sel, true); return; }
+    if (!S.yt) { play(S.sel, true); return; }
     if (S.playing) { S.yt.pauseVideo(); S.playing = false; }
     else { S.yt.playVideo(); S.playing = true; }
     render();
@@ -243,19 +246,13 @@
     const p = pool(); if (!p.length) return;
     let to;
     if (S.shuf) {
-      if (dir < 0 && S.hist.length) { to = S.hist.pop(); revealPlayer(); play(to, true); return; }
+      if (dir < 0 && S.hist.length) { to = S.hist.pop(); play(to, true); return; }
       to = pickShuffle(p);
     } else {
       const at = p.indexOf(S.sel);
       to = at < 0 ? (dir > 0 ? p[0] : p[p.length - 1]) : p[(at + dir + p.length) % p.length];
     }
-    revealPlayer();
     play(to);
-  }
-  function revealPlayer() {
-    const w = S.wins.pl;
-    if (!w.o || w.m) { delete S.mv.pl; S.wins.pl = { o: true, m: false }; }
-    if (mobile()) S.order = front('pl');
   }
 
   /* ---------- rendering ---------- */
@@ -272,7 +269,7 @@
       tr.className = i === S.sel ? 'sel' : (lk ? 'lk' : '');
       const td1 = document.createElement('td'); td1.className = 'f';
       const b = document.createElement('button'); b.type = 'button'; b.className = 'rowbtn';
-      if (i === S.sel && S.playing && S.wins.pl.o) {
+      if (i === S.sel && S.playing) {
         const mk = document.createElement('span'); mk.setAttribute('aria-hidden', 'true'); mk.textContent = '> ';
         const sr = document.createElement('span'); sr.className = 'sr'; sr.textContent = ', playing';
         b.append(mk, t.name, sr);
@@ -298,13 +295,11 @@
   function renderProgress() {
     const pct = S.dur ? Math.min(100, (S.pos / S.dur) * 100) : 0;
     $('#segfill').style.width = pct + '%';
-    $('#mini-line').style.width = pct + '%';
     $('#pos').textContent = fmt(S.pos); $('#dur').textContent = fmt(S.dur);
     const seg = $('#seg');
     seg.setAttribute('aria-valuemax', Math.floor(S.dur));
     seg.setAttribute('aria-valuenow', Math.floor(S.pos));
     seg.setAttribute('aria-valuetext', fmt(S.pos) + ' of ' + fmt(S.dur));
-    $('#mini-state').textContent = (S.playing ? 'playing' : 'paused') + ' · ' + fmt(S.pos) + ' / ' + fmt(S.dur);
   }
   /* 24px glyphs for the readme rows and the tray */
   const ICONS = {
@@ -330,8 +325,12 @@
   }
   function renderPlayer() {
     const t = S.tracks[S.sel] || { name: '' };
-    $('#now').textContent = t.name; $('#mini-name').textContent = t.name;
-    $('#facade').setAttribute('aria-label', 'play ' + t.name);
+    $('#now').textContent = t.name; $('#now-album').textContent = t.album || '';
+    $('#vname').textContent = t.name;
+    $('#vstat').textContent = S.started ? (S.corrupt.has(S.sel) ? 'video: unreadable.' : t.name) : 'video: not loaded.';
+    renderArt(t);
+    const msg = S.started ? (S.playing ? 'playing ' + t.name : 'paused') : '';
+    if (msg !== S.said) { S.said = msg; $('#live').textContent = msg; }
     $$('[data-act=toggle]').forEach((b) => { b.setAttribute('aria-label', S.playing ? 'pause' : 'play'); $('.ip', b).setAttribute('d', S.playing ? ICON_PAUSE : ICON_PLAY); });
     const sh = $('[data-act=shuffle]'); sh.setAttribute('aria-pressed', S.shuf); sh.classList.toggle('on', S.shuf);
     const bad = S.corrupt.has(S.sel);
@@ -343,6 +342,18 @@
       linkRow('', 'watch', 'youtube', t.youtube ? 'https://www.youtube.com/watch?v=' + encodeURIComponent(t.youtube) : null)
     );
     renderProgress();
+  }
+  /* pane art: static text-free art of the selected file's album; build_site.py writes released albums only */
+  const albumSlug = (a) => a.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'dash';
+  /* data-dir is relative to the page that loaded; resolve it once, before pushState changes the URL */
+  const ARTDIR = new URL($('#art').dataset.dir, location.href).href;
+  /* rows scroll-margin-top follows the pinned block's height */
+  if (window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--pin', $('#pane').offsetHeight + 'px')).observe($('#pane'));
+  function renderArt(t) {
+    const img = $('#art'); if (!t.album) return;
+        const src = ARTDIR + albumSlug(t.album) + '.svg';
+    img.onerror = () => { img.hidden = true; };
+    if (img.src !== src) { img.hidden = false; img.src = src; }
   }
   function renderReadme() {
     const box = $('#rdlinks'); box.textContent = '';
@@ -370,12 +381,11 @@
   }
   function renderWindows() {
     const mob = mobile(); const act = activeKey();
-    ['ex', 'pl', 'rd'].forEach((k) => {
+    ['ex', 'rd'].forEach((k) => {
       const el = $('#w-' + k); const w = S.wins[k];
-      el.hidden = mob ? !w.o : !(w.o && !w.m);
+      el.hidden = !(w.o && !w.m);
       el.classList.toggle('off', !mob && act !== k);
       el.classList.toggle('max', !mob && S.max === k);
-      el.classList.toggle('col', mob && S.exp !== k);
       const m = S.mv[k];
       el.style.transform = !mob && m && S.max !== k ? 'translate(' + m.x + 'px,' + m.y + 'px)' : '';
       el.style.zIndex = mob ? '' : String(10 + S.order.indexOf(k));
@@ -383,7 +393,6 @@
       const mx = $('.mx', el);
       mx.setAttribute('aria-label', (S.max === k ? 'restore ' : 'maximize ') + LABELS[k]);
       $('path', mx).setAttribute('d', S.max === k ? RESTORE_D : MAX_D);
-      $('.bt', el).setAttribute('aria-expanded', String(mob ? S.exp === k : true));
     });
     const sy = $('#w-sy');
     sy.hidden = !S.dlg;
@@ -403,10 +412,9 @@
       const k = b.dataset.k;
       if (k === 'rc') { const on = !!(S.dlg && S.dlg.src === 'recycle'); b.className = 'ico' + (on ? ' on' : ''); return; }
       const w = S.wins[k];
-      const on = mob ? (w.o && S.exp === k) : (w.o && !w.m && act === k);
+      const on = w.o && !w.m && act === k;
       b.className = 'ico' + (w.o ? (on ? ' on' : ' mn') : '');
-      const minimized = w.o && (mob ? S.exp !== k : w.m);
-      $('.st', b).textContent = !w.o ? '' : (minimized ? (mob ? ', collapsed' : ', minimized') : ', open');
+      $('.st', b).textContent = !w.o ? '' : (w.m ? ', minimized' : ', open');
     });
   }
   function renderTasks() {
@@ -415,13 +423,11 @@
     const ft = document.activeElement && document.activeElement.closest && document.activeElement.closest('#tasks .tkb');
     const keepK = ft ? ft.dataset.k : null;
     box.textContent = '';
-    let keys = mob
-      ? S.order.slice().reverse().filter((k) => (k === 'sy' ? !!S.dlg : S.wins[k].o))
-      : ['ex', 'pl', 'rd'].filter((k) => S.wins[k].o).concat(S.dlg ? ['sy'] : []);
+    const keys = ['ex', 'rd'].filter((k) => S.wins[k].o).concat(S.dlg ? ['sy'] : []);
     const span = keys.length <= 2 ? 3 : (keys.length <= 4 ? 2 : 1);
     keys.forEach((k) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'tkb'; b.dataset.k = k;
-      const on = mob ? S.exp === k : (k === 'sy' || (act === k && !S.wins[k].m));
+      const on = k === 'sy' || (act === k && !S.wins[k].m);
       if (on) b.classList.add('on');
       b.setAttribute('aria-pressed', String(on));
       if (!mob) b.style.gridColumn = 'span ' + span;
@@ -429,7 +435,7 @@
       long.textContent = k === 'sy' ? (S.dlg.src === 'recycle' ? 'recycle err' : 'system') : LABELS[k];
       const short = document.createElement('span'); short.className = 'short'; short.textContent = SHORT[k];
       b.append(long, short);
-      const hiddenPlayer = k === 'pl' && S.playing && (mob ? S.exp !== 'pl' : S.wins.pl.m);
+      const hiddenPlayer = k === 'ex' && S.playing && S.wins.ex.m;
       if (hiddenPlayer) {
         const pm = document.createElement('span'); pm.className = 'pm'; pm.setAttribute('aria-hidden', 'true'); pm.textContent = '>'; b.prepend(pm);
         const sr = document.createElement('span'); sr.className = 'sr'; sr.textContent = ', playing'; b.append(sr);
@@ -442,7 +448,15 @@
       else if (keepK !== 'sy') $('.dn .ico[data-k="' + keepK + '"]').focus({ preventScroll: true });
     }
   }
-  function renderStatus() { const i = latest(); $('#status').textContent = i === null ? 'sealed' : S.tracks[i].album; }
+  /* wallpaper: animated art of the latest release; build_site.py writes only released albums, so a missing file just hides it */
+  function renderWallpaper() {
+    const img = $('#wp'), i = latest(); if (!img) return;
+    img.onerror = () => { img.hidden = true; };
+    if (i === null) { img.hidden = true; return; }
+    const src = img.dataset.dir + (S.tracks[i].album.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'dash') + '.svg';
+    if (img.src !== src) { img.hidden = false; img.src = src; }
+  }
+  function renderStatus() { const i = latest(); $('#status').textContent = i === null ? 'sealed' : S.tracks[i].album; renderWallpaper(); }
   function render() { renderWindows(); renderIcons(); renderTasks(); renderRows(); renderPlayer(); }
 
   /* ---------- chrome: title bars, drag, clock ---------- */
@@ -452,20 +466,16 @@
     return b;
   }
   function buildBars() {
-    ['ex', 'pl', 'rd'].forEach((k) => {
+    ['ex', 'rd'].forEach((k) => {
       const bar = $('#w-' + k + ' .bar');
-      const bt = document.createElement('button'); bt.type = 'button'; bt.className = 'bt'; bt.setAttribute('aria-expanded', 'true');
-      bt.innerHTML = '<svg class="chev" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2"/></svg><span class="tl"></span>';
-      $('.tl', bt).textContent = LABELS[k];
-      bt.addEventListener('click', () => { S.exp = S.exp === k ? null : k; render(); });
       const ctl = document.createElement('div'); ctl.className = 'ctl';
       const mn = svgBtn('mn', 'minimize ' + LABELS[k], 'M1 8h8'); mn.addEventListener('click', () => minWin(k));
       const mx = svgBtn('mx', 'maximize ' + LABELS[k], MAX_D); mx.addEventListener('click', () => maxWin(k));
       const x = svgBtn('x', 'close ' + LABELS[k], 'M1 1l8 8M9 1l-8 8'); x.addEventListener('click', () => closeWin(k));
       ctl.append(mn, mx, x);
-      bar.append(bt, ctl);
+      bar.append(ctl);
     });
-    ['ex', 'pl', 'rd', 'sy'].forEach((k) => {
+    ['ex', 'rd', 'sy'].forEach((k) => {
       const el = $('#w-' + k);
       drag(k, $('.bar', el), el);
       if (k !== 'sy') el.addEventListener('pointerdown', () => focusWin(k));
@@ -508,20 +518,13 @@
       const tr = e.target.closest('tr[data-i]'); if (!tr) return;
       const i = Number(tr.dataset.i); const t = S.tracks[i];
       if (isLocked(t)) { showDlg({ head: 'file is locked.', sub: '0x3F · unlocks on its release date.', src: 'system' }); return; }
-      const w = S.wins.pl;
-      if (!w.o || w.m) { delete S.mv.pl; S.wins.pl = { o: true, m: false }; }
-      if (mobile()) S.order = front('pl'); /* player moves up but stays collapsed so the list doesn't jump away */
       play(i);
     });
     $('#q').addEventListener('input', (e) => { S.q = e.target.value; renderRows(); });
     $$('.dn .ico').forEach((b) => b.addEventListener('click', () => {
       const k = b.dataset.k;
       if (k === 'rc') { recycle(); return; }
-      if (k === 'pl') {
-        const wasClosed = !S.wins.pl.o;
-        openWin('pl');
-        if (wasClosed && !S.corrupt.has(S.sel)) play(S.sel, true);
-      } else if (mobile() || !S.wins[k].o || S.wins[k].m) openWin(k); else focusWin(k);
+      if (!S.wins[k].o || S.wins[k].m) openWin(k); else focusWin(k);
       focusInto(k);
     }));
     document.addEventListener('click', (e) => {
@@ -533,7 +536,6 @@
       else if (act === 'shuffle') { S.shuf = !S.shuf; S.bag = []; renderPlayer(); }
       else if (act === 'dismiss') dismiss();
     });
-    $('#facade').addEventListener('click', () => play(S.sel, true));
     $('#w-sy').addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); dismiss(); } });
     const seg = $('#seg');
     seg.addEventListener('click', (e) => { const r = seg.getBoundingClientRect(); seek(((e.clientX - r.left) / r.width) * S.dur); });
@@ -546,7 +548,7 @@
     $('#tasks').addEventListener('click', (e) => {
       const b = e.target.closest('.tkb'); if (!b) return;
       const k = b.dataset.k; taskClick(k);
-      if (k !== 'sy' && S.wins[k].o && !S.wins[k].m && (!mobile() || S.exp === k)) focusInto(k);
+      if (k !== 'sy' && S.wins[k].o && !S.wins[k].m) focusInto(k);
     });
     /* space plays and pauses from anywhere except text fields (the youtube iframe keeps its own keys) */
     const typing = (el) => el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
@@ -558,10 +560,7 @@
     window.addEventListener('keyup', (e) => { if (e.key === ' ' && !typing(e.target)) e.preventDefault(); }, true);
     const orb = $('#orb');
     orb.addEventListener('click', () => { orb.classList.remove('spin'); void orb.offsetWidth; orb.classList.add('spin'); });
-    mq.addEventListener('change', () => {
-      if (mobile()) { S.max = null; if (!S.exp || !S.wins[S.exp] || !S.wins[S.exp].o) S.exp = topOpen(); }
-      render();
-    });
+    mq.addEventListener('change', () => { if (mobile()) S.max = null; render(); });
   }
 
   function init() {
@@ -569,7 +568,6 @@
     document.getElementById('nojs').hidden = true; /* the plain listing stays up only if this script never runs */
     buildBars();
     wire();
-    if (mobile()) { S.order = ['ex', 'pl']; S.exp = 'pl'; }
     load().then(() => {
       const want = document.body.dataset.track;
       const hit = S.tracks.findIndex((t) => t.slug === want && !isLocked(t));
@@ -577,7 +575,6 @@
       S.sel = hit >= 0 ? hit : (l === undefined ? 0 : l);
       const t = S.tracks[S.sel];
       S.dur = t ? t.secs || 0 : 0;
-      if (hit < 0) $('#facade span').textContent = 'file ready. press play to read.';
       renderStatus(); renderReadme(); render();
       if (document.body.dataset.missing) showDlg({ head: 'file not found.', sub: '0x00 · that path is not on this drive.', src: 'system' });
     }).catch(() => {
