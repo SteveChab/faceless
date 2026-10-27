@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>5-scene-1.1 · dithereal</title>
+<meta name="description" content="recovered from drive d:\. test loops.">
+<link rel="canonical" href="https://dithereal.com/f/5-scene-1-1/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="5-scene-1.1 · dithereal">
+<meta property="og:description" content="recovered from drive d:\. test loops.">
+<meta property="og:url" content="https://dithereal.com/f/5-scene-1-1/">
+<meta name="theme-color" content="#121212">
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="../../assets/fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../assets/css/site.css">
+<script src="../../assets/js/app.js" defer></script>
+</head>
+<body data-track="5-scene-1-1">
+<a class="skip" href="#w-ex">skip to files</a>
+<script type="application/json" id="tracks-data">{"mock":false,"links":{"youtube":"https://www.youtube.com/channel/UCt69nfSj5Rmn8jaj-QMfblQ","bandcamp":"https://dithereal.bandcamp.com/album/test-loops","tiktok":null,"instagram":null},"contact":"d@dithereal.com","tracks":[{"name":"5-scene-1.1","album":"test loops","secs":10,"youtube":"bj4b9CMn3S8","bandcamp":"https://dithereal.bandcamp.com/album/test-loops","release":"2026-10-26"},{"name":"5-scene-1","album":"test loops","secs":4,"youtube":"sMnrIgrJ5N0","bandcamp":"https://dithereal.bandcamp.com/album/test-loops","release":"2026-10-26"},{"name":"untitled-project-scene-1.1","album":"test loops","secs":4,"youtube":"2ILzDbFzuS0","bandcamp":"https://dithereal.bandcamp.com/album/test-loops","release":"2026-10-26"},{"name":"untitled-project-scene-1.2","album":"test loops","secs":92,"youtube":"2fo2PuKB4o4","bandcamp":"https://dithereal.bandcamp.com/album/test-loops","release":"2026-10-26"}]}</script>
+<div class="desk" id="desk" hidden>
+<main class="g">
+<h1 class="wm">dithereal</h1>
+<dl class="meta"><dt>drive</dt><dd>d:\</dd><dt>status</dt><dd id="status"></dd></dl>
+<div class="rule" aria-hidden="true"></div>
+
+<nav class="dn" aria-label="desktop">
+<button type="button" class="ico" data-k="ex">
+<svg width="56" height="48" viewBox="0 0 56 48" aria-hidden="true"><path class="ink" d="M2 8h18l4 5h30v31H2z" fill="#1C1C1C"/><path class="bf" d="M2 8h18l4 5H2z"/></svg>
+<span>recovered<span class="sr st"></span></span></button>
+<button type="button" class="ico" data-k="rd">
+<svg width="56" height="48" viewBox="0 0 56 48" aria-hidden="true"><path class="ink" d="M12 3h24l9 9v33H12z" fill="#1C1C1C"/><path d="M18 20h20M18 26h20M18 32h14" stroke="#ECECE6" stroke-width="2"/></svg>
+<span>readme.txt<span class="sr st"></span></span></button>
+<button type="button" class="ico" data-k="rc">
+<svg width="56" height="48" viewBox="0 0 56 48" aria-hidden="true"><path class="ink" d="M12 13h32l-3 31H15z" fill="#1C1C1C"/><path d="M9 11h38" stroke="#ECECE6" stroke-width="2"/><path d="M22 18v20M28 18v20M34 18v20" stroke="#ECECE6" stroke-width="2"/></svg>
+<span>recycle</span></button>
+<button type="button" class="ico" data-k="pl">
+<svg width="56" height="48" viewBox="0 0 56 48" aria-hidden="true"><rect class="ink" x="4" y="6" width="48" height="36" fill="#1C1C1C"/><path class="bf" d="M4 6h48v8H4z"/><path d="M23 21l13 8-13 8z" fill="#ECECE6"/></svg>
+<span>player<span class="sr st"></span></span></button>
+</nav>
+
+<div class="stack">
+
+<section class="win" id="w-ex" data-k="ex" aria-label="d:\recovered" tabindex="-1">
+<div class="bar"><span class="tt">d:\recovered</span></div>
+<div class="wb">
+<div class="srch"><label for="q" class="cap">search</label><input id="q" type="search" autocomplete="off" spellcheck="false"></div>
+<div class="listbox">
+<table class="t">
+<thead><tr><th scope="col">name</th><th scope="col">length</th><th scope="col">album</th></tr></thead>
+<tbody id="rows"></tbody>
+</table>
+</div>
+<div class="cap foot" aria-live="polite"><span id="count"></span><span id="locks"></span></div>
+</div>
+</section>
+
+<section class="win" id="w-pl" data-k="pl" aria-label="player" tabindex="-1">
+<div class="bar"><span class="tt">player</span></div>
+<div class="mini">
+<div><div class="mn1" id="mini-name"></div><div class="cap" id="mini-state"></div></div>
+<button type="button" class="btn sq" data-act="toggle" aria-label="play"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path class="ip" d="M3 1l10 6-10 6z"/></svg></button>
+<div class="line" aria-hidden="true"><i id="mini-line"></i></div>
+</div>
+<div class="wb plb">
+<div class="scr" id="scr">
+<button type="button" class="facade" id="facade" aria-label="play"><svg viewBox="0 0 44 44" aria-hidden="true"><rect x="1" y="1" width="42" height="42" fill="none" stroke="#ECECE6" stroke-width="2"/><path d="M17 13l15 9-15 9z" fill="#ECECE6"/></svg><span>file ready. press play to read.</span></button>
+<div id="yt"></div>
+<div class="corrupt" id="corrupt" hidden><div>corrupted — cannot read sector.</div><a id="corrupt-link" href="#" target="_blank" rel="noopener">open on youtube →</a></div>
+</div>
+<div><div class="cap">now playing</div><div class="nowname" id="now"></div></div>
+<div>
+<div class="seg" id="seg" role="slider" tabindex="0" aria-label="playback position" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-valuetext="0:00 of 0:00"><i id="segfill"></i></div>
+<div class="cap times"><span id="pos">0:00</span><span id="dur">0:00</span></div>
+</div>
+<div class="btns">
+<button type="button" class="btn sq" data-act="prev" aria-label="previous"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M6.5 1v12L0 7zM13.5 1v12L7 7z"/></svg></button>
+<button type="button" class="btn sq" data-act="toggle" aria-label="play"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path class="ip" d="M3 1l10 6-10 6z"/></svg></button>
+<button type="button" class="btn sq" data-act="next" aria-label="next"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M0 1l6.5 6L0 13zM7 1l6.5 6L7 13z"/></svg></button>
+<button type="button" class="btn sq shuf" data-act="shuffle" aria-label="shuffle" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" stroke-width="2"><path d="M0 3.5h3.2c2.6 0 3.4 7 6.3 7H12M0 10.5h3.2c.9 0 1.5-.8 2-1.8M7.6 5.3c.5-1 1.2-1.8 1.9-1.8H12"/><path d="M10.5 1.2L13 3.5l-2.5 2.3M10.5 8.2L13 10.5l-2.5 2.3"/></svg></button>
+</div>
+<div class="plinks" id="plinks"></div>
+</div>
+</section>
+
+<section class="win" id="w-rd" data-k="rd" aria-label="readme.txt" tabindex="-1">
+<div class="bar"><span class="tt">readme.txt</span></div>
+<div class="wb rdb">
+<pre>drive d:\
+status: recovered. mostly.
+contents: audio files. no labels.
+origin: not recorded.
+
+files are listed in the order they were found.</pre>
+<div id="rdlinks"></div>
+<div class="cap" id="contact"></div>
+</div>
+</section>
+
+<section class="win" id="w-sy" data-k="sy" role="alertdialog" aria-labelledby="dlgtitle" aria-describedby="dlghead dlgsub" aria-modal="false">
+<div class="bar"><span class="tt" id="dlgtitle">system</span><span class="bt" aria-hidden="true"><span class="tl" id="dlgtitle-m">system</span></span><div class="ctl"><button type="button" class="x" data-act="dismiss" aria-label="close message"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1l8 8M9 1l-8 8" stroke-width="2"/></svg></button></div></div>
+<div class="wb">
+<div class="dlgb">
+<svg width="52" height="46" viewBox="0 0 52 46" aria-hidden="true"><path d="M26 2l24 42H2z" fill="#7FFF00"/><path d="M26 16v14" stroke="#121212" stroke-width="4"/><rect x="24" y="34" width="4" height="4" fill="#121212"/></svg>
+<div><div class="dlgh" id="dlghead"></div><div class="dlgs" id="dlgsub"></div></div>
+</div>
+<div class="dlgf"><button type="button" class="btn def" data-act="dismiss">dismiss</button></div>
+</div>
+</section>
+
+</div>
+</main>
+
+<div class="tk" role="group" aria-label="taskbar">
+<button type="button" class="orb" id="orb" tabindex="-1" aria-hidden="true"><svg width="62" height="62" viewBox="0 0 512 512" aria-hidden="true"><circle cx="256" cy="256" r="240" fill="#000" stroke="#ECECE6" stroke-width="16"/><path class="d" fill="#fff" d="M282.6,113.8c0-1.3.5-2.5,1.4-3.4,1-.9,2.1-1.4,3.4-1.4h36.8c1.3,0,2.5.5,3.4,1.4,1,1,1.4,2.1,1.4,3.4h0v270.4c0,1.3-.5,2.5-1.4,3.4-.9.9-2,1.4-3.4,1.4h-36.8c-1.3,0-2.5-.5-3.4-1.4-.9-1-1.4-2.1-1.4-3.4h0v-12c0-.8-.3-1.3-.8-1.6s-1.1,0-1.6.8h0c-11.7,13.9-27.1,20.8-46,20.8h0c-18.9,0-34.9-4.9-48-14.8-13.1-9.9-22.5-23.6-28.4-41.2h0c-4.8-14.9-7.2-31.6-7.2-50h0c0-18.9,2.3-35.2,6.8-48.8h0c5.9-17.6,15.3-31.3,28.4-41.2s29.5-14.8,49.2-14.8h0c18.4,0,33.5,6.7,45.2,20h0c.5.5,1.1.7,1.6.6.5-.2.8-.6.8-1.4h0v-86.8ZM273,333c6.1-10.9,9.2-26.4,9.2-46.4h0c0-20.8-3.3-36.7-10-47.6h0c-7.2-11.7-17.3-17.6-30.4-17.6h0c-13.6,0-24.3,5.6-32,16.8h0c-8,11.7-12,28-12,48.8h0c0,18.7,3.2,34,9.6,46h0c7.5,12.8,18.8,19.2,34,19.2h0c13.6,0,24.1-6.4,31.6-19.2h0Z"/></svg></button>
+<div class="tkw" id="tasks"></div>
+<div class="clock" id="clock">00:00</div>
+</div>
+</div>
+
+<div class="nojs" id="nojs">
+<h1 class="wm">dithereal</h1>
+<pre>drive d:\
+status: recovered. mostly.
+contents: audio files. no labels.
+origin: not recorded.</pre>
+<h2>d:\recovered</h2>
+<table class="t"><thead><tr><th scope="col">name</th><th scope="col">length</th><th scope="col">album</th></tr></thead><tbody>
+<tr><td><a href="https://www.youtube.com/watch?v=bj4b9CMn3S8">5-scene-1.1</a></td><td class="m">0:10</td><td class="m">test loops</td></tr>
+<tr><td><a href="https://www.youtube.com/watch?v=sMnrIgrJ5N0">5-scene-1</a></td><td class="m">0:04</td><td class="m">test loops</td></tr>
+<tr><td><a href="https://www.youtube.com/watch?v=2ILzDbFzuS0">untitled-project-scene-1.1</a></td><td class="m">0:04</td><td class="m">test loops</td></tr>
+<tr><td><a href="https://www.youtube.com/watch?v=2fo2PuKB4o4">untitled-project-scene-1.2</a></td><td class="m">1:32</td><td class="m">test loops</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>
