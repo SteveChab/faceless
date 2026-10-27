@@ -25,8 +25,8 @@ button{font:inherit;color:inherit}
 
 /* ---------- wallpaper ---------- */
 /* animated art of the latest release, behind everything; cover keeps it large enough to show around the windows */
-.wp{position:fixed;left:0;top:0;width:100%;height:calc(100vh - var(--tk));height:calc(100dvh - var(--tk));object-fit:cover;opacity:.45;z-index:-1;pointer-events:none;user-select:none}
-@media (max-width:899.98px){.wp{opacity:.3}}
+.wp{position:fixed;left:0;top:0;width:100%;height:calc(100vh - var(--tk));height:calc(100dvh - var(--tk));object-fit:cover;opacity:.65;z-index:-1;pointer-events:none;user-select:none}
+@media (max-width:899.98px){.wp{opacity:.65}}
 
 /* ---------- desktop shell ---------- */
 /* desktop fits one screen: taskbar fixed, window row takes what is left; scrolls only below 640px tall */
