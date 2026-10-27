@@ -306,6 +306,18 @@
     seg.setAttribute('aria-valuetext', fmt(S.pos) + ' of ' + fmt(S.dur));
     $('#mini-state').textContent = (S.playing ? 'playing' : 'paused') + ' · ' + fmt(S.pos) + ' / ' + fmt(S.dur);
   }
+  /* 24px glyphs for the readme rows and the tray */
+  const ICONS = {
+    youtube: 'M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.6 15.6V8.4l6.2 3.6z',
+    bandcamp: 'M0 18.75l7.437-13.5H24l-7.438 13.5H0z',
+    tiktok: 'M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z'
+  };
+  const icon = (k, s) => {
+    const NS = 'http://www.w3.org/2000/svg', v = document.createElementNS(NS, 'svg');
+    v.setAttribute('viewBox', '0 0 24 24'); v.setAttribute('width', s); v.setAttribute('height', s); v.setAttribute('aria-hidden', 'true'); v.setAttribute('fill', 'currentColor');
+    const p = document.createElementNS(NS, 'path'); p.setAttribute('d', ICONS[k]); v.appendChild(p);
+    return v;
+  };
   function linkRow(cls, label, right, href) {
     const el = document.createElement(href ? 'a' : 'span');
     el.className = cls + (href ? '' : ' na');
@@ -334,11 +346,27 @@
   }
   function renderReadme() {
     const box = $('#rdlinks'); box.textContent = '';
-    ['youtube', 'bandcamp', 'tiktok', 'instagram'].forEach((k) => box.appendChild(linkRow('lnk', k, '', S.links[k] || null)));
+    ['youtube', 'bandcamp', 'tiktok'].forEach((k) => {
+      const row = linkRow('lnk', k, '', S.links[k] || null);
+      const lab = row.firstChild; lab.style.display = 'flex'; lab.style.alignItems = 'center'; lab.style.gap = '12px';
+      lab.prepend(icon(k, 20));
+      box.appendChild(row);
+    });
     $$('.lnk .mono', box).forEach((m) => { if (m.textContent === ' →') m.textContent = '→'; });
-    const c = $('#contact');
-    c.hidden = !S.contact;
-    if (S.contact) { c.textContent = ''; const a = document.createElement('a'); a.href = 'mailto:' + S.contact; a.textContent = S.contact; c.appendChild(a); }
+    const tray = $('#tray'); tray.textContent = '';
+    ['youtube', 'bandcamp', 'tiktok'].forEach((k) => {
+      if (!S.links[k]) return;
+      const a = document.createElement('a'); a.href = S.links[k]; a.target = '_blank'; a.rel = 'noopener'; a.title = k; a.setAttribute('aria-label', k + ' (opens in a new tab)');
+      a.appendChild(icon(k, 18)); tray.appendChild(a);
+    });
+    /* the address is stored encoded and only assembled on click, so scrapers never see it in the page */
+    const c = $('#contact'); c.hidden = !S.contact; c.textContent = '';
+    if (S.contact) {
+      const n = document.createElement('div'); n.textContent = 'booking, interviews, press: write in.';
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'lnk rdmail'; b.textContent = 'show email address';
+      b.addEventListener('click', () => { const m = atob(S.contact); location.href = 'mailto:' + m; b.textContent = m.replace('@', ' at ').replace(/\./g, ' dot '); });
+      c.append(n, b);
+    }
   }
   function renderWindows() {
     const mob = mobile(); const act = activeKey();

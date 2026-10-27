@@ -125,6 +125,8 @@ button{font:inherit;color:inherit}
 .rdb pre{margin:0;font:400 13px/1.7 var(--mono);white-space:pre-wrap}
 .lnk{display:flex;justify-content:space-between;align-items:center;min-height:44px;border-top:1px solid var(--line);font:500 13px/1 var(--mono)}
 .lnk.na{color:var(--muted)}
+.rdnote{font:400 13px/1.7 var(--mono);display:flex;flex-direction:column;gap:6px}
+.rdmail{width:100%;background:none;border:0;border-top:1px solid var(--line);color:var(--ink);cursor:pointer;text-align:left;padding:0}
 
 /* dialog */
 .dlgb{padding:20px;display:grid;grid-template-columns:52px minmax(0,1fr);column-gap:16px;align-items:start}
@@ -139,7 +141,10 @@ button{font:inherit;color:inherit}
 .orb .d{transform-box:fill-box;transform-origin:center}
 .orb.spin .d{animation:spin .6s cubic-bezier(.3,.7,.2,1)}
 @keyframes spin{to{transform:rotate(360deg)}}
-.tkw{grid-column:4/12;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));column-gap:16px}
+.tkw{grid-column:4/11;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));column-gap:16px}
+.tray{grid-column:11/12;justify-self:end;display:flex;gap:2px;align-items:center}
+.tray a{display:flex;align-items:center;justify-content:center;width:32px;height:32px;color:var(--muted)}
+.tray a:hover,.tray a:focus-visible{color:var(--ink)}
 .tkb{justify-self:start;width:100%;max-width:200px;height:32px;display:flex;align-items:center;gap:8px;padding:0 12px;border:2px dotted var(--muted);background:none;color:var(--ink);font:500 13px/1 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;text-align:left;position:relative}
 .tkb::after{content:"";position:absolute;inset:-6px 0}
 .tkb.on{border-style:solid;border-color:var(--ink);background:#262626}
@@ -205,6 +210,7 @@ button{font:inherit;color:inherit}
   .tkb.on{background:var(--ink);color:var(--ground)}
   .tkb .long{display:none}
   .clock{flex:none}
+  .tray{display:none}
   #w-ex{grid-column:auto}
 }
 @media (min-width:900px){.tkb .short{display:none}}
