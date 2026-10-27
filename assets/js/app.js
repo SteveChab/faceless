@@ -295,6 +295,7 @@
   function renderProgress() {
     const pct = S.dur ? Math.min(100, (S.pos / S.dur) * 100) : 0;
     $('#segfill').style.width = pct + '%';
+    $('#waveon').style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)';
     $('#pos').textContent = fmt(S.pos); $('#dur').textContent = fmt(S.dur);
     const seg = $('#seg');
     seg.setAttribute('aria-valuemax', Math.floor(S.dur));
@@ -328,7 +329,7 @@
     $('#now').textContent = t.name; $('#now-album').textContent = t.album || '';
     $('#vname').textContent = t.name;
     $('#vstat').textContent = S.started ? (S.corrupt.has(S.sel) ? 'video: unreadable.' : t.name) : 'video: not loaded.';
-    renderArt(t);
+    renderArt(t); renderWave(t);
     const msg = S.started ? (S.playing ? 'playing ' + t.name : 'paused') : '';
     if (msg !== S.said) { S.said = msg; $('#live').textContent = msg; }
     $$('[data-act=toggle]').forEach((b) => { b.setAttribute('aria-label', S.playing ? 'pause' : 'play'); $('.ip', b).setAttribute('d', S.playing ? ICON_PAUSE : ICON_PLAY); });
@@ -349,6 +350,14 @@
   const ARTDIR = new URL($('#art').dataset.dir, location.href).href;
   /* rows scroll-margin-top follows the pinned block's height */
   if (window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--pin', $('#pane').offsetHeight + 'px')).observe($('#pane'));
+  /* waveform peaks (computed at render time, tools/peaks.py) drawn as mirrored bars over the still art */
+  function renderWave(t) {
+    if (S.waveFor === t.name) return;
+    S.waveFor = t.name;
+    const p = t.peaks || [];
+    const d = p.map((v, i) => { const h = Math.max(1, v * 0.9); return 'M' + (i + 0.15) + ' ' + (50 - h / 2) + 'h0.7v' + h + 'h-0.7z'; }).join('');
+    ['#wave', '#waveon'].forEach((id) => { $(id).innerHTML = d ? '<path d="' + d + '"/>' : ''; });
+  }
   function renderArt(t) {
     const img = $('#art'); if (!t.album) return;
         const src = ARTDIR + albumSlug(t.album) + '.svg';

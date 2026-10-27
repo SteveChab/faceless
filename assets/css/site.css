@@ -117,6 +117,8 @@ button{font:inherit;color:inherit}
 .seg i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,var(--ink) 0 8px,transparent 8px 11px)}
 .times{display:flex;justify-content:space-between;margin-top:6px}
 .btns{display:flex;gap:8px}
+.wave{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;fill:var(--ink);opacity:.2}
+.wave.on{fill:var(--signal);opacity:.55;clip-path:inset(0 100% 0 0)}
 .art .btns{position:absolute;left:0;right:0;bottom:0;padding:8px;z-index:1}
 .art .btn{background:var(--ground)}
 .btn{min-width:88px;height:30px;padding:0 14px;border:2px solid var(--muted);background:none;color:var(--ink);font:600 13px/1 var(--sans);cursor:pointer}
