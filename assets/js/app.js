@@ -35,7 +35,7 @@
     started: false, wins: { ex: { o: true, m: false }, rd: { o: false, m: false } },
     order: ['rd', 'ex'], max: null, mv: {},
     dlg: null, lastErr: -1, opener: null,
-    yt: null, ytLoading: false, poll: 0
+    yt: null, ytLoading: false, poll: 0, loading: false
   };
 
   /* ---------- data ---------- */
@@ -166,20 +166,26 @@
       renderProgress();
     }, 1000);
   }
+  /* spinner on the art from the press until the video actually plays; gives up after 10s so a blocked autoplay never spins forever */
+  function setLoading(on) {
+    S.loading = on; clearTimeout(S.loadT);
+    if (on) S.loadT = setTimeout(() => { S.loading = false; renderPlayer(); }, 10000);
+  }
   function onState(e) {
     const YS = window.YT.PlayerState;
-    if (e.data === YS.PLAYING) { S.playing = true; startPoll(); }
-    else if (e.data === YS.PAUSED) { S.playing = false; clearInterval(S.poll); }
-    else if (e.data === YS.ENDED) { S.playing = false; clearInterval(S.poll); step(1, false); return; }
+    if (e.data === YS.PLAYING) { S.playing = true; setLoading(false); startPoll(); }
+    else if (e.data === YS.BUFFERING) { if (S.playing) setLoading(true); }
+    else if (e.data === YS.PAUSED) { S.playing = false; setLoading(false); clearInterval(S.poll); }
+    else if (e.data === YS.ENDED) { S.playing = false; setLoading(false); clearInterval(S.poll); step(1, false); return; }
     renderPlayer(); renderRows(); renderTasks();
   }
   function onErr() {
     S.corrupt.add(S.sel);
-    S.playing = false; clearInterval(S.poll);
+    S.playing = false; setLoading(false); clearInterval(S.poll);
     renderPlayer(); renderRows();
   }
   function stop() {
-    S.playing = false; clearInterval(S.poll);
+    S.playing = false; setLoading(false); clearInterval(S.poll);
     if (S.yt && S.yt.stopVideo) S.yt.stopVideo();
   }
   /* back to idle: stop, drop the embed; the selection stays */
@@ -205,7 +211,7 @@
     setUrl();
     S.started = true; $('#pane').classList.add('started');
     if (S.corrupt.has(i)) { S.playing = false; render(); return; }
-    S.playing = true;
+    S.playing = true; setLoading(true);
     if (S.yt && S.yt.loadVideoById) {
       S.yt.loadVideoById(t.youtube);
     } else {
@@ -227,7 +233,7 @@
   function toggle() {
     if (S.corrupt.has(S.sel)) return;
     if (!S.yt) { play(S.sel, true); return; }
-    if (S.playing) { S.yt.pauseVideo(); S.playing = false; }
+    if (S.playing) { S.yt.pauseVideo(); S.playing = false; setLoading(false); }
     else { S.yt.playVideo(); S.playing = true; }
     render();
   }
@@ -331,6 +337,7 @@
     $('#vname').textContent = t.name;
     $('#vstat').textContent = S.started ? (S.corrupt.has(S.sel) ? 'video: unreadable.' : t.name) : 'video: not loaded.';
     renderArt(t); renderWave();
+    $('#aspin').hidden = !(S.loading && S.playing);
     const msg = S.started ? (S.playing ? 'playing ' + t.name : 'paused') : '';
     if (msg !== S.said) { S.said = msg; $('#live').textContent = msg; }
     $$('[data-act=toggle]').forEach((b) => { b.setAttribute('aria-label', S.playing ? 'pause' : 'play'); $('.ip', b).setAttribute('d', S.playing ? ICON_PAUSE : ICON_PLAY); });
@@ -364,12 +371,13 @@
   if (window.ResizeObserver) new ResizeObserver(([e]) => document.documentElement.style.setProperty('--pin', e.target.offsetHeight + 'px')).observe($('#pane'));
   /* jittery waveform over the art, scaled by the track's recorded loudness (peaks.json, tools/peaks.py); runs only while playing */
   const WN = 96, still = matchMedia('(prefers-reduced-motion: reduce)'), wave = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  $('#wave').append(wave);
+  const wave2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  $('#wave').append(wave); $('#wavebg').append(wave2);
   const jit = (i, f) => { const x = Math.sin(i * 12.9898 + f * 78.233) * 43758.5453; return (x - Math.floor(x)) * 2 - 1; };
   function drawWave(env, frame) {
     let d = '';
     for (let i = 0; i < WN; i++) d += (i ? 'L' : 'M') + (i * 120 / (WN - 1)).toFixed(1) + ' ' + (50 + jit(i, frame) * env * 45).toFixed(1);
-    wave.setAttribute('d', d);
+    wave.setAttribute('d', d); wave2.setAttribute('d', d);
   }
   function waveLoop() {
     S.wraf = 0;
@@ -483,10 +491,11 @@
   /* wallpaper: animated art of the latest release; build_site.py writes only released albums, so a missing file just hides it */
   function renderWallpaper() {
     const img = $('#wp'), i = latest(); if (!img) return;
-    img.onerror = () => { img.hidden = true; };
+    img.onerror = () => { img.hidden = true; delete img.dataset.cur; };
     if (i === null) { img.hidden = true; return; }
+    /* compare against what we set, not img.src (which is absolute): reassigning every minute restarted the art and could blank it */
     const src = img.dataset.dir + slugify(S.tracks[i].album, 'dash') + '.svg';
-    if (img.src !== src) { img.hidden = false; img.src = src; }
+    if (img.dataset.cur !== src) { img.dataset.cur = src; img.hidden = false; img.src = src; }
   }
   function renderStatus() { const i = latest(); $('#status').textContent = i === null ? 'sealed' : S.tracks[i].album; renderWallpaper(); }
   function render() { renderWindows(); renderIcons(); renderTasks(); renderRows(); renderPlayer(); }
@@ -591,7 +600,11 @@
     }, true);
     window.addEventListener('keyup', (e) => { if (e.key === ' ' && !typing(e.target)) e.preventDefault(); }, true);
     const orb = $('#orb');
-    orb.addEventListener('click', () => { orb.classList.remove('spin'); void orb.offsetWidth; orb.classList.add('spin'); });
+    const wp = $('#wp');
+    orb.addEventListener('click', () => {
+      [orb, wp].forEach((el) => { el.classList.remove('spin'); void el.offsetWidth; el.classList.add('spin'); });
+    });
+    wp.addEventListener('animationend', () => wp.classList.remove('spin'));
     mq.addEventListener('change', () => { if (mobile()) S.max = null; render(); });
   }
 
