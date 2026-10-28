@@ -337,7 +337,7 @@
     $('#vname').textContent = t.name;
     $('#vstat').textContent = S.started ? (S.corrupt.has(S.sel) ? 'video: unreadable.' : t.name) : 'video: not loaded.';
     renderArt(t); renderWave();
-    $('#aspin').hidden = !(S.loading && S.playing);
+    const sp = $('#aspin'); if (sp) sp.hidden = !(S.loading && S.playing);
     const msg = S.started ? (S.playing ? 'playing ' + t.name : 'paused') : '';
     if (msg !== S.said) { S.said = msg; $('#live').textContent = msg; }
     $$('[data-act=toggle]').forEach((b) => { b.setAttribute('aria-label', S.playing ? 'pause' : 'play'); $('.ip', b).setAttribute('d', S.playing ? ICON_PAUSE : ICON_PLAY); });
@@ -372,7 +372,7 @@
   /* jittery waveform over the art, scaled by the track's recorded loudness (peaks.json, tools/peaks.py); runs only while playing */
   const WN = 96, still = matchMedia('(prefers-reduced-motion: reduce)'), wave = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   const wave2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  $('#wave').append(wave); $('#wavebg').append(wave2);
+  $('#wave').append(wave); const bg = $('#wavebg'); if (bg) bg.append(wave2); /* pages built before the background wave existed lack it */
   const jit = (i, f) => { const x = Math.sin(i * 12.9898 + f * 78.233) * 43758.5453; return (x - Math.floor(x)) * 2 - 1; };
   function drawWave(env, frame) {
     let d = '';
