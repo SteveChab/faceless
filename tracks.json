@@ -40,28 +40,12 @@
       "release": "2026-10-26"
     },
     {
-      "name": "drum loop (fair sky)",
-      "album": "loops2",
-      "secs": 50,
-      "youtube": "fC2mG18lrzo",
-      "bandcamp": "https://dithereal.bandcamp.com/album/loops2",
-      "release": "2026-11-02"
-    },
-    {
       "name": "completebeats 82-02",
       "album": "loops2",
       "secs": 7,
       "youtube": "lZoAzTaaXO0",
       "bandcamp": "https://dithereal.bandcamp.com/album/loops2",
-      "release": "2026-11-09"
-    },
-    {
-      "name": "drum cuts - fast",
-      "album": "loops2",
-      "secs": 13,
-      "youtube": "XCTn2sITqXk",
-      "bandcamp": "https://dithereal.bandcamp.com/album/loops2",
-      "release": "2026-11-16"
+      "release": "2026-11-02T12:00:00Z"
     },
     {
       "name": "completebeats 82-06",
@@ -69,7 +53,23 @@
       "secs": 3,
       "youtube": "y41lh-_Trig",
       "bandcamp": "https://dithereal.bandcamp.com/album/loops2",
-      "release": "2026-11-23"
+      "release": "2026-11-02T12:00:00Z"
+    },
+    {
+      "name": "drum cuts - fast",
+      "album": "loops2",
+      "secs": 13,
+      "youtube": "XCTn2sITqXk",
+      "bandcamp": "https://dithereal.bandcamp.com/album/loops2",
+      "release": "2026-11-02T12:00:00Z"
+    },
+    {
+      "name": "drum loop (fair sky)",
+      "album": "loops2",
+      "secs": 50,
+      "youtube": "fC2mG18lrzo",
+      "bandcamp": "https://dithereal.bandcamp.com/album/loops2",
+      "release": "2026-11-02T12:00:00Z"
     }
   ]
 }
