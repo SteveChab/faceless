@@ -171,7 +171,10 @@
     S.loading = on; clearTimeout(S.loadT);
     if (on) S.loadT = setTimeout(() => { S.loading = false; renderPlayer(); }, 10000);
   }
+  /* the video is a tiny, mostly hidden embed: ask for the lowest quality (YouTube treats this as a hint and may ignore it) */
+  function lowQ(p) { try { p.setPlaybackQuality('tiny'); } catch (_) {} }
   function onState(e) {
+    if (e.data === window.YT.PlayerState.PLAYING || e.data === window.YT.PlayerState.BUFFERING) lowQ(e.target);
     const YS = window.YT.PlayerState;
     if (e.data === YS.PLAYING) { S.playing = true; setLoading(false); startPoll(); }
     else if (e.data === YS.BUFFERING) { if (S.playing) setLoading(true); }
@@ -224,7 +227,7 @@
           /* privacy-enhanced host, nothing loads before the first press; rel 0 keeps any suggestions to the same channel,
              fs 0 and controls 0 keep visitors in this player, iv_load_policy 3 drops annotations */
           playerVars: { autoplay: 1, playsinline: 1, rel: 0, controls: 0, disablekb: 1, fs: 0, iv_load_policy: 3, cc_load_policy: 0, origin: location.protocol === 'file:' ? undefined : location.origin },
-          events: { onReady: (e) => e.target.playVideo(), onStateChange: onState, onError: onErr }
+          events: { onReady: (e) => { lowQ(e.target); e.target.playVideo(); }, onStateChange: onState, onError: onErr }
         });
       });
     }
@@ -384,7 +387,8 @@
     const t = S.tracks[S.sel], e = t && S.env[t.name.toLowerCase()];
     if (!S.playing || !S.yt || !e || still.matches) { drawWave(0, 0); return; }
     const sec = S.yt.getCurrentTime ? S.yt.getCurrentTime() : S.pos;
-    drawWave((e.charCodeAt(Math.min(e.length - 1, Math.floor(sec * 20))) || 0) / 255, Math.floor(sec * 30));
+    const env = (e.charCodeAt(Math.min(e.length - 1, Math.floor(sec * 20))) || 0) / 255, fr = Math.floor(sec * 30), key = env + ':' + fr;
+    if (key !== S.wkey) { S.wkey = key; drawWave(env, fr); }
     S.wraf = requestAnimationFrame(waveLoop);
   }
   function renderWave() {
