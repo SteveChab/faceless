@@ -356,14 +356,14 @@
     renderProgress();
   }
   /* the pane art is the album's animated svg, inlined in a shadow root so its styles stay scoped; paused unless playing */
-  const WPDIR = new URL($('#wp').dataset.dir, location.href).href, svgCache = {};  /* resolved once, before pushState changes the URL */
+  const WPDIR = new URL($('#wp').dataset.dir, location.href).href, WPV = $('#wp').dataset.v || '', svgCache = {};  /* resolved once, before pushState changes the URL */
   function renderArt(t) {
     const host = $('#artsvg'); if (!t.album) return;
     const slug = slugify(t.album, 'dash');
     host.classList.toggle('paused', !S.playing);
     if (host.dataset.slug === slug) return;
     host.dataset.slug = slug;
-    (svgCache[slug] = svgCache[slug] || fetch(WPDIR + slug + '.svg').then((r) => r.ok ? r.text() : Promise.reject())).then((txt) => {
+    (svgCache[slug] = svgCache[slug] || fetch(WPDIR + slug + '.svg?v=' + WPV).then((r) => r.ok ? r.text() : Promise.reject())).then((txt) => {
       if (host.dataset.slug !== slug) return;
       (host.shadowRoot || host.attachShadow({ mode: 'open' })).innerHTML =
         '<style>:host{display:block}svg{display:block;width:100%;height:100%}:host(.paused) *{animation-play-state:paused!important}</style>'
@@ -498,7 +498,7 @@
     img.onerror = () => { img.hidden = true; delete img.dataset.cur; };
     if (i === null) { img.hidden = true; return; }
     /* compare against what we set, not img.src (which is absolute): reassigning every minute restarted the art and could blank it */
-    const src = img.dataset.dir + slugify(S.tracks[i].album, 'dash') + '.svg';
+    const src = img.dataset.dir + slugify(S.tracks[i].album, 'dash') + '.svg?v=' + (img.dataset.v || '');
     if (img.dataset.cur !== src) { img.dataset.cur = src; img.hidden = false; img.src = src; }
   }
   function renderStatus() { const i = latest(); $('#status').textContent = i === null ? 'sealed' : S.tracks[i].album; renderWallpaper(); }
