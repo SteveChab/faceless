@@ -116,10 +116,10 @@ class PS extends AudioWorkletProcessor{
 registerProcessor('ps',PS);
 class FX extends AudioWorkletProcessor{
  constructor(){super();this.sr=sampleRate;this.N=sampleRate*2|0;this.rl=new Float32Array(this.N);this.rr=new Float32Array(this.N);this.w=0;
-  this.p={bits:16,gcpb:0,am:0,drive:0,rcpb:0,fz:0,aT:0,aB:0,bpm:92,sw:0};this.s={am:0,drive:0,fz:0,gate:1};this.rep=null;this.rp=0;this.frz=null;this.fi=0;this.minGate=1;
+  this.p={bits:16,gcpb:0,am:0,drive:0,rcpb:0,fz:0,aT:0,aB:0,bpm:92};this.s={am:0,drive:0,fz:0,gate:1};this.rep=null;this.rp=0;this.frz=null;this.fi=0;this.minGate=1;
   this.port.onmessage=e=>{const m=e.data,p=this.p;
    if(m.anchor){p.aT=m.anchor.time;p.aB=m.anchor.beat;p.bpm=m.anchor.bpm}
-   if('sw' in m)p.sw=m.sw;if('bits' in m)p.bits=m.bits;if('gcpb' in m)p.gcpb=m.gcpb;if('am' in m)p.am=m.am;if('drive' in m)p.drive=m.drive;
+   if('bits' in m)p.bits=m.bits;if('gcpb' in m)p.gcpb=m.gcpb;if('am' in m)p.am=m.am;if('drive' in m)p.drive=m.drive;
    if('rcpb' in m&&m.rcpb!==p.rcpb){p.rcpb=m.rcpb;this.rep=m.rcpb?this.cap(Math.round(60/p.bpm/m.rcpb*this.sr)):null;this.rp=0}
    if('fz' in m){if(m.fz>=0.02&&!this.frz){this.frz=this.cap(this.sr);this.fi=0}if(m.fz<0.02)this.frz=null;p.fz=m.fz}
    if(m.probe)this.port.postMessage({probe:{minGate:this.minGate,bits:p.bits}})}}
@@ -129,8 +129,7 @@ class FX extends AudioWorkletProcessor{
   const p=this.p,s=this.s,sr=this.sr,n=out[0].length,aL=a[0],aR=a[1]||a[0];
   for(let k=0;k<n;k++){
    s.am+=(p.am-s.am)*0.003;s.drive+=(p.drive-s.drive)*0.003;s.fz+=(p.fz-s.fz)*0.003;
-   let b=p.aB+(currentTime+k/sr-p.aT)*p.bpm/60;let l=aL[k],r=aR[k];
-   if(p.sw>0){const d=0.25*p.sw,fl=Math.floor(b),u=b-fl;b=fl+(u<0.5+d?u*0.5/(0.5+d):0.5+(u-0.5-d)*0.5/(0.5-d))}
+   const b=p.aB+(currentTime+k/sr-p.aT)*p.bpm/60;let l=aL[k],r=aR[k];
    if(s.drive>0.001){const g=1+s.drive*30,m=0.8;l=Math.max(-1,Math.min(1,l*g))*m;r=Math.max(-1,Math.min(1,r*g))*m}
    if(s.am>0.005){const lfo=0.5-0.5*Math.cos(6.2831853*b*4),gm=1-s.am*(1-lfo);l*=gm;r*=gm}
    if(p.gcpb>0){const t=((b*p.gcpb)%1)<0.5?1:0.5;s.gate+=(t-s.gate)*0.02;if(s.gate<this.minGate)this.minGate=s.gate;l*=s.gate;r*=s.gate}else s.gate=1;
@@ -148,7 +147,7 @@ registerProcessor('fx',FX);
 const $=s=>document.querySelector(s);
 const LET='abc';
 let shotTap,ctx,fx,chainIn,hitBus,lp,hp,dly,dhp,dsend,dfb,mix,masterG,pushG,limiter,analyser,songs=[null,null,null],viewBank=0,knobBank=0,loadingBank=null;
-let base=92,ratio=1,semi=0,swing=0,bpm=92,anchor={time:0,beat:0,bpm:92};
+let base=92,ratio=1,semi=0,bpm=92,anchor={time:0,beat:0,bpm:92};
 const voices={},loops={},down={},flash={},K=[[],[],[]];let sliceFlash=null;
 const CPB=[0,1,2,3,4,8],CPBN=['off','1/4','1/8','1/8t','1/16','1/32'];
 const KC=[[3,9,12,13,14,15],[16,17,18,19,20,21],[22,23,24,25,26,27]];
@@ -195,7 +194,7 @@ async function _init(){
   o.loopSum.connect(o.duck);o.duck.connect(o.ps);o.ps.connect(chainIn);o.shotSum.connect(o.ps2);o.ps2.connect(chainIn);o.ps2.connect(shotTap);
   nodes[i]=o}
  anchor={time:ctx.currentTime,beat:0,bpm};
- fx.port.postMessage({anchor,sw:swing});
+ fx.port.postMessage({anchor});
  setInterval(beatTick,25);
  await ctx.resume().catch(()=>{});
  watchUnderrun();
@@ -206,12 +205,11 @@ let probeCb=null;
 const nodes=[];
 function beatNow(){return anchor.beat+(ctx.currentTime-anchor.time)*anchor.bpm/60}
 function nextBeatTime(){let b=Math.ceil(beatNow()+0.03);return anchor.time+(b-anchor.beat)*60/anchor.bpm}
-function nextSwungTime(){if(swing<=0)return nextBeatTime();const b=beatNow()+0.03,fl=Math.floor(b),c=[fl,fl+0.5+0.25*swing,fl+1].find(x=>x>=b);return anchor.time+(c-anchor.beat)*60/anchor.bpm}
 function applyTempo(){
  if(!ctx)return;
  const nb=base*ratio,now=ctx.currentTime;
- anchor={time:now,beat:beatNow(),bpm:nb};bpm=nb;fx.port.postMessage({anchor,sw:swing});
- dly.delayTime.setTargetAtTime((0.75-swing*0.0833)*60/bpm,now,0.05);
+ anchor={time:now,beat:beatNow(),bpm:nb};bpm=nb;fx.port.postMessage({anchor});
+ dly.delayTime.setTargetAtTime(0.75*60/bpm,now,0.05);
  songs.forEach((s,i)=>{if(!s)return;s.rate=bpm/s.bpm;
   for(const src of nodes[i].active)src.playbackRate.setTargetAtTime(s.rate,now,0.02);
   {const r=Math.pow(2,semi/12)/s.rate;nodes[i].ps.parameters.get('ratio').setTargetAtTime(r,now,0.02);nodes[i].ps2.parameters.get('ratio').setTargetAtTime(r,now,0.02)}});
@@ -272,7 +270,7 @@ function release(key){const vo=voices[key];if(vo&&vo.held){const n=ctx.currentTi
 function stopLoop(key){const L=loops[key];if(!L)return;const n=ctx.currentTime;L.g.gain.cancelScheduledValues(n);L.g.gain.setValueAtTime(L.g.gain.value,n);L.g.gain.linearRampToValueAtTime(0,n+0.005);try{L.src.stop(n+0.01)}catch(e){}delete loops[key]}
 function toggleLoop(s,p,vel){
  const key=s*16+p;if(loops[key]){stopLoop(key);return}
- const sg=songs[s],d=sg.pads[p];if(!d)return;const t=nextSwungTime(),v=vel/127;
+ const sg=songs[s],d=sg.pads[p];if(!d)return;const t=nextBeatTime(),v=vel/127;
  const src=ctx.createBufferSource();src.buffer=loopBuf(sg,d);src.loop=true;src.playbackRate.value=sg.rate;
  const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+EDGE);
  src.connect(g);g.connect(nodes[s].loopSum);src.start(t);
@@ -316,7 +314,7 @@ function beatTick(){
  const sb=SPB[bt.spd];if(sb!==bt.sb){const nxt=bt.s*bt.sb;bt.sb=sb;bt.s=Math.ceil(nxt/sb-1e-6)}
  const horizon=ctx.currentTime+0.1;let guard=0;
  while(guard++<64){
-  const beat=bt.s*bt.sb+((bt.s&1)?swing*0.5*bt.sb:0),t=anchor.time+(beat-anchor.beat)*60/anchor.bpm;
+  const beat=bt.s*bt.sb,t=anchor.time+(beat-anchor.beat)*60/anchor.bpm;
   if(t>=horizon)break;
   if(t<ctx.currentTime-0.05){bt.s=Math.ceil(beatNow()/bt.sb);continue}
   const L=bt.spd===4?12:16,st=bt.pat[((bt.s%L)+L)%L];
@@ -343,7 +341,7 @@ function buildKnobs(){
   if(b==2){const p=document.createElement('div');p.className='sk wide';p.innerHTML='<div class="skr"><span class="n">pattern</span><span class="v">off</span></div><div class="mt" id="pat"></div>';
    const mt=p.querySelector('.mt');p.steps=[];for(let i=0;i<16;i++){const s=document.createElement('i');mt.appendChild(s);p.steps.push(s)}patEl=p;patV=p.querySelector('.v');extra.push(p)}
   const gp=grp(LET[b],b==2?'beat':'fx',cells[b],extra);gp.id='kb'+b;g.appendChild(gp)}
- cT=mkCell('tempo');cP=mkCell('swing');g.appendChild(grp('all','knobs',[cT,cP]));
+ cT=mkCell('tempo');cP=mkCell('pitch');g.appendChild(grp('all','knobs',[cT,cP]));
  cM=mkCell('master');cPu=mkCell('push');cGR=mkCell('gain red.');
  for(const [c,key,lo,hi] of [[cM,'master',-30,0],[cPu,'push',0,12]]){
   const r=document.createElement('input');r.type='range';r.min=lo;r.max=hi;r.step=1;r.value=OUT[key];r.setAttribute('aria-label',key+' in db');
@@ -375,7 +373,7 @@ function drawPat(){
  patEl.steps.forEach((s,i)=>s.classList.toggle('f',!!(on&&bt.pat[i].rank<patCount())))}
 function resetKnobsUI(){
  for(let b=0;b<3;b++)for(let k=0;k<4;k++){K[b][k]=DEF[b][k];showKnob(b,k,DEF[b][k])}
- setCell(cT,true,64/127,'100% · 0 st');setCell(cP,true,0,'50%');drawOut();drawGR();drawPat();
+ setCell(cT,true,64/127,'100%');setCell(cP,true,0.5,'0 st');drawOut();drawGR();drawPat();
 }
 /* display (and bank c state) for one knob; no audio nodes needed */
 function showKnob(b,k,v){
@@ -428,8 +426,8 @@ function knob(b,k,v){
  knobBank=b;
  if(k>=4){
   const kk=k-4;CUR[kk]=v;
-  if(k==4){semi=v<64?(v-64)/64*12:(v-64)/63*12;ratio=Math.pow(2,semi/12);setCell(cT,true,v/127,Math.round(ratio*100)+'% · '+(semi>=0?'+':'')+semi.toFixed(1)+' st')}
-  else{swing=v/127;setCell(cP,true,swing,Math.round(50+25*swing)+'%');if(ctx){applyTempo();return}}
+  if(k==4){ratio=v<64?0.25+v/64*0.75:1+(v-64)/63*0.5;setCell(cT,true,v/127,Math.round(ratio*100)+'%')}
+  else{semi=(v-64)/64*12;setCell(cP,true,v/127,(semi>=0?'+':'')+semi.toFixed(1)+' st')}
   applyTempo();return}
  K[b][k]=v;
  if(b==2){setBeat(k,v);for(let j=0;j<4;j++)showKnob(2,j,K[2][j]);drawPat();return}
@@ -443,7 +441,7 @@ const CCMAP={};KC.forEach((a,b)=>a.forEach((cc,k)=>{CCMAP[cc]=[b,k]}));
 function doReset(){
  if(ctx){stopAll();for(const k in voices)release(k)}
  for(const k in down)down[k]=0;
- songs=[null,null,null];viewBank=0;sliceFlash=null;base=92;ratio=1;semi=0;swing=0;bt.vol=0;bt.pat=null;bt.dens=0.75;bt.spd=3;bt.vel=85/127;
+ songs=[null,null,null];viewBank=0;sliceFlash=null;base=92;ratio=1;semi=0;bt.vol=0;bt.pat=null;bt.dens=0.75;bt.spd=3;bt.vel=85/127;
  CUR[0]=CUR[1]=null;for(const k in PICK)delete PICK[k];for(const k in PREV)delete PREV[k];
  OUT.master=0;OUT.push=PUSH0;OUT.lim=true;cM.querySelector('input').value=0;cPu.querySelector('input').value=PUSH0;
  for(const k in pend)delete pend[k];
