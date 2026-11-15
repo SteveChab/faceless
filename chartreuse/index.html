@@ -17,9 +17,10 @@ header{display:flex;justify-content:space-between;align-items:flex-end;border-bo
 .chip{border:3px solid var(--ink);background:var(--g);padding:3px 10px;display:flex;gap:8px;align-items:center;justify-content:space-between;font:500 16px "IBM Plex Mono",Menlo,monospace;cursor:pointer;width:172px;white-space:nowrap}
 .tv{display:block;width:5ch;text-align:right;font-variant-numeric:tabular-nums}
 #st{width:216px;white-space:nowrap}
+#rec{width:150px;justify-content:center;padding:1px 6px}#rec.on{background:var(--ink);color:var(--g)}
 #bpm{width:92px;text-align:right;white-space:nowrap}
 #blink{width:26px;height:26px;border:3px solid var(--ink)}#blink.on{background:var(--ink)}
-#midi{width:176px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#midi{width:110px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 #clr{font:600 16px Barlow,sans-serif;background:var(--g);border:3px solid var(--ink);padding:3px 12px;display:flex;gap:8px;align-items:center;cursor:pointer;width:104px;justify-content:center}
 #clr:hover,.chip:hover{background:var(--ink);color:var(--g)}
 #head{display:flex;justify-content:space-between;align-items:flex-end;flex:none;gap:16px}
@@ -81,8 +82,8 @@ dialog .bt button.go{background:var(--ink);color:var(--g)}
 </style></head><body>
 <div id="app">
  <header><div id="wm">dithereal</div>
-  <div class="hs"><button id="timer" class="chip" type="button" aria-label="set time. click to reset"><b style="font-weight:500">set time</b><span class="tv" id="tv">0:00</span></button>
-   <span id="st">pad bank a · sample 1</span><span id="bpm">92.0 bpm</span><span id="blink" aria-hidden="true"></span><span id="midi" title="">midi: …</span>
+  <div class="hs"><button id="timer" class="chip" type="button" aria-label="set time. click to reset the timer"><b style="font-weight:500">set time</b><span class="tv" id="tv">0:00</span></button>
+   <span id="st">pad bank a · sample 1</span><span id="bpm">92.0 bpm</span><button id="rec" class="chip" type="button" aria-label="start recording">rec □</button><span id="blink" aria-hidden="true"></span><span id="midi" title="">midi: …</span>
    <button id="clr" type="button"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8a5 5 0 1 0 2-4"/><path d="M3 1v4h4"/></svg>reset</button></div></header>
  <div id="head"><h1 id="big">d:\live</h1><div id="tabs" role="group" aria-label="samples"></div></div>
  <div id="wave"><canvas id="cv" aria-label="waveform of the selected sample" role="img"></canvas></div>
@@ -140,7 +141,13 @@ class FX extends AudioWorkletProcessor{
     l=l*(1-0.5*s.fz)+f.L[j]*e*s.fz;r=r*(1-0.5*s.fz)+f.R[j]*e*s.fz}
    out[0][k]=l;if(out[1])out[1][k]=r}
   return true}}
-registerProcessor('fx',FX);
+class REC extends AudioWorkletProcessor{
+ constructor(){super();this.on=false;this.L=new Float32Array(4096);this.R=new Float32Array(4096);this.n=0;
+  this.port.onmessage=e=>{if(e.data==='start'){this.on=true;this.n=0}else if(e.data==='stop'){this.flush();this.on=false;this.port.postMessage({done:1})}}}
+ flush(){if(this.n){const l=this.L.slice(0,this.n),r=this.R.slice(0,this.n);this.port.postMessage({l,r},[l.buffer,r.buffer]);this.n=0}}
+ process(inp){if(!this.on)return true;const i=inp[0];if(!i||!i[0])return true;const a=i[0],b=i[1]||i[0];
+  for(let k=0;k<a.length;k++){this.L[this.n]=a[k];this.R[this.n]=b[k];if(++this.n===4096)this.flush()}return true}}
+registerProcessor('rec',REC);
 </script>
 <script>
 'use strict';
@@ -187,6 +194,7 @@ async function _init(){
  limiter=ctx.createDynamicsCompressor();limiter.threshold.value=-3;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=0.002;limiter.release.value=0.12;
  analyser=ctx.createAnalyser();analyser.fftSize=1024;
  mix.connect(masterG);masterG.connect(pushG);analyser.connect(ctx.destination);
+ rec=new AudioWorkletNode(ctx,'rec',{numberOfInputs:1,numberOfOutputs:0,channelCount:2,channelCountMode:'explicit'});analyser.connect(rec);rec.port.onmessage=recMsg;
  applyOut();
  for(let i=0;i<3;i++){
   const o={loopSum:ctx.createGain(),duck:ctx.createGain(),shotSum:ctx.createGain(),active:new Set()};const mkps=()=>new AudioWorkletNode(ctx,'ps',{outputChannelCount:[2],channelCount:2,channelCountMode:'explicit'});
@@ -285,6 +293,37 @@ function stopEverything(){
 /* set timer: starts on the first hit, click to reset */
 let tStart=null;
 function timerReset(){tStart=null;$('#tv').textContent='0:00'}
+/* take recorder: the rec button starts and stops it (nothing else does: the timer, resetting the set and
+   switching songs never touch it). Taps the final output after the limiter and saves a 32-bit float
+   stereo wav when rec is clicked off, so peaks over 0 dbfs are kept, not clipped (trim in mastering).
+   Audio is stored as it arrives, so stopping only adds a header: no pause. A take over 25 minutes is
+   saved in parts so memory stays bounded (about 0.6 gb per part at 48 khz). */
+let rec=null,recC=[],recN=0,recOn=false,recSave=false,recPart=0,recName='';
+const recRoll=()=>ctx.sampleRate*1500,recMin=()=>ctx.sampleRate*2;
+function recShow(){const e=$('#rec');e.textContent=recOn?'rec ■ '+recLeft():'rec □';e.classList.toggle('on',recOn);e.setAttribute('aria-label',recOn?'recording. click to stop and save':'start recording')}
+function recLeft(){const t=Math.max(0,Math.ceil((recRoll()-recN)/ctx.sampleRate));return fmt(t)+(t<=60?'!':'')}
+function recStart(){if(recOn||!ctx||!rec)return;recC=[];recN=0;recPart=0;recSave=false;recOn=true;
+ const d=new Date(),z=n=>String(n).padStart(2,'0');
+ recName='dithereal-live-'+d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+'-'+z(d.getHours())+z(d.getMinutes())+z(d.getSeconds());
+ rec.port.postMessage('start');recShow()}
+function recStop(save){if(!recOn)return;recOn=false;recSave=!!save;rec.port.postMessage('stop');recShow()}
+function i24(L,R){const n=L.length,f=new Float32Array(n*2);
+ for(let i=0;i<n;i++){f[2*i]=L[i];f[2*i+1]=R[i]}
+ return f}
+function recMsg(e){const d=e.data;
+ if(d.l){recC.push(i24(d.l,d.r));recN+=d.l.length;if(recOn&&recN>recRoll())recFlush(true)}
+ else if(d.done){if(recSave&&recN>recMin())recFlush(false);recC=[];recN=0}}
+function recFlush(more){recPart++;
+ const name=recName+((more||recPart>1)?'-part'+recPart:'')+'.wav';
+ recDownload(wavBlob(recC,recN,ctx.sampleRate),name);
+ if(more){recC=[];recN=0}}
+function recDownload(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),600000)}
+function wavBlob(chunks,n,sr){const ch=2,bps=4,data=n*ch*bps,h=new ArrayBuffer(44),v=new DataView(h);
+ const w=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i))};
+ w(0,'RIFF');v.setUint32(4,36+data,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,3,true);v.setUint16(22,ch,true);
+ v.setUint32(24,sr,true);v.setUint32(28,sr*ch*bps,true);v.setUint16(32,ch*bps,true);v.setUint16(34,32,true);w(36,'data');v.setUint32(40,data,true);
+ return new Blob([h,...chunks],{type:'audio/wav'})}
+addEventListener('beforeunload',e=>{if(recOn&&recN>0){e.preventDefault();e.returnValue=''}});
 function noteOn(note,vel){
  const s=Math.floor((note-36)/16);if(s<0||s>2)return;const p=(note-36)%16;
  viewBank=s;if(!ctx||!songs[s])return;
@@ -643,6 +682,7 @@ function frame(){
  const lk=viewBank+'|'+[0,1,2].map(loopCount).join(',');
  if(lk!==lastLK){const vc=lastLK.split('|')[0]!==String(viewBank);lastLK=lk;buildSongs();if(vc){buildPads();drawWave()}}
  const st='pad bank '+LET[viewBank]+' · sample '+(viewBank+1);if($('#st').textContent!==st)$('#st').textContent=st;
+ if(recOn){const t='rec ■ '+recLeft(),e=$('#rec');if(e.textContent!==t)e.textContent=t}
  if(tStart!==null){const t=fmt((now-tStart)/1000);if(t!==lastTime){lastTime=t;$('#tv').textContent=t}}else lastTime='';
  for(let i=0;i<3;i++){const e=$('#kb'+i);if(e)e.classList.toggle('now',i===knobBank)}
  for(let p=0;p<16;p++){const el=$('#pad'+p);if(!el)continue;const k=viewBank*16+p;
@@ -660,6 +700,7 @@ addEventListener('dragleave',e=>{dc--;if(dc<=0){dc=0;$('#drop').style.display='n
 addEventListener('dragover',e=>e.preventDefault());
 addEventListener('drop',e=>{e.preventDefault();dc=0;$('#drop').style.display='none';addFiles(e.dataTransfer.files)});
 $('#timer').onclick=timerReset;
+$('#rec').onclick=()=>{if(!ctx||!rec)return;if(recOn)recStop(true);else recStart()};
 const dlg=$('#dlg');
 $('#clr').onclick=()=>dlg.showModal();
 $('#dno').onclick=()=>dlg.close();
