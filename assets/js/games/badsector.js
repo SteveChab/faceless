@@ -43,7 +43,7 @@
         env, v: null, t: 0, over: false, score: 0, lives: 3, round: 1, power: 0, combo: 0, freeze: 1.2, port: false, cs: 20, ox: 0, oy: 0, bits: 0,
         dots: [], p: null, gh: [], botT: 0, flash: 0,
         resize(w, h, top) {
-          this.v = { w, h, top }; this.port = (h - top) > w * 1.1;
+          this.v = { w, h, top }; this.port = h > w * 1.05;
           const SWc = this.port ? MH : MW, SHc = this.port ? MW : MH;
           this.cs = Math.max(6, Math.floor(Math.min((w - 16) / SWc, (h - top - 10) / SHc)));
           this.ox = Math.floor((w - this.cs * SWc) / 2); this.oy = Math.floor((h - top - this.cs * SHc) / 2);

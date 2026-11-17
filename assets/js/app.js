@@ -553,7 +553,7 @@
   }
   function renderStatus() { const i = latest(); $('#status').textContent = i === null ? 'sealed' : S.tracks[i].album; }
   function render() { renderWindows(); renderIcons(); renderTasks(); renderRows(); renderPlayer(); syncApps(); }
-  function syncApps() { if (window.DG) window.DG.sync(); placeYT(); }
+  function syncApps() { if (window.DG) window.DG.sync(); if (window.WC) window.WC.kick(); placeYT(); }
 
   /* ---------- the one youtube player ----------
      The iframe never moves (moving it reloads it and stops the music). #ythost is fixed and laid over whichever video box is showing:
@@ -764,7 +764,7 @@
     loud, base: ABASE, still: () => still.matches, mobile,
     visible: isTop,
     /* a game takes arrow keys only while its window is the focused one */
-    focused: () => isTop('gx') && !S.dlg && !S.saver && !document.hidden && document.hasFocus() && $('#w-gx').contains(document.activeElement),
+    focused: () => isTop('gx') && !S.dlg && !S.saver && !document.hidden && (mobile() || (document.hasFocus() && $('#w-gx').contains(document.activeElement))),
     confirm: (d) => showDlg({ ...d, src: 'system' }),
     store: {
       get(k, d) { try { const v = localStorage.getItem('dithereal.' + k); return v == null ? d : JSON.parse(v); } catch (_) { return d; } },

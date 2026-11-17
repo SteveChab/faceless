@@ -137,7 +137,7 @@
 
     r.resize = () => {
       const b = stage.getBoundingClientRect(); if (b.width < 20 || b.height < 20) return;
-      r.dpr = Math.min(2, window.devicePixelRatio || 1); r.w = b.width; r.h = b.height; r.top = b.width > 440 ? 36 : 54; /* the score line; two lines on a narrow stage */
+      r.dpr = Math.min(2, window.devicePixelRatio || 1); r.w = b.width; r.h = b.height; r.top = b.width > 440 ? 36 : 44; /* the score line; two lines on a narrow stage */
       sizeCanvas(cv, r.w, r.h, r.dpr); r.inst.resize(r.w, r.h, r.top); r.dirty = true;
     };
 
@@ -239,7 +239,7 @@
       if (r.st !== 'start' && r.st !== 'tag' && r.st !== 'done') {
         const h = r.inst.hud(); x.font = DG.MONO;
         if (x.measureText(h[0]).width + x.measureText(h[1]).width + 48 < r.w) { capText(x, h[0], 16, 24, 'left'); capText(x, h[1], r.w - 16, 24, 'right'); }
-        else { capText(x, h[0], 16, 22, 'left'); capText(x, h[1], 16, 40, 'left'); }
+        else { capText(x, h[0], 16, 18, 'left'); capText(x, h[1], 16, 35, 'left'); }
       }
       const cx = r.w / 2, cy = r.top + (r.h - r.top) * .5;
       if (r.st === 'ready') { const left = Math.max(1, Math.ceil(r.readyT / .45)); inkText(x, 'ready.  ' + '■'.repeat(left) + '□'.repeat(3 - left), cx, cy); }
@@ -264,7 +264,7 @@
       if (run.running()) raf = requestAnimationFrame(loop);
     }
   }
-  function kick() { if (!raf && run && run.running() && DS.visible('gx') && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(loop); } }
+  function kick() { if (!raf && run && (run.running() || run.dirty) && DS.visible('gx') && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(loop); } }
   function ploop(now) {
     prafT = 0;
     if (!prevs.length || document.hidden || !DS.visible('gm')) return;
