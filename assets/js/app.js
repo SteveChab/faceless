@@ -15,8 +15,12 @@
     { head: 'file not found.', sub: 'recycle was never here.' },
     { head: 'restore failed.', sub: 'nothing was deleted. yet.' }
   ];
-  const LABELS = { ex: 'd:\\recovered', rd: 'readme.txt' };
-  const SHORT = { ex: 'recovered', rd: 'readme', sy: 'err' };
+  const LABELS = { ex: 'media player', gm: 'd:\\games', gx: 'd:\\games', pt: 'paint', wc: 'webcam', rd: 'readme.txt' };
+  const SHORT = { ex: 'player', gm: 'games', gx: 'game', pt: 'paint', wc: 'webcam', rd: 'readme', sy: 'err' };
+  const WK = ['ex', 'gm', 'gx', 'pt', 'wc', 'rd'];      /* every window but the dialog */
+  const SLOT = ['ex', 'gm', 'gx', 'pt', 'wc'];           /* windows that share the media player's grid slot */
+  const FIXM = ['gx', 'pt', 'wc'];                       /* phone: these open maximized over the page, one at a time */
+  const ICOOF = { gx: 'gm' };                            /* a game has no icon: focus goes back to the games icon */
   const ICON_PLAY = 'M3 1l10 6-10 6z';
   const ICON_PAUSE = 'M3 1h3v12H3zM8 1h3v12H8z';
   const MAX_D = 'M1.5 1.5h7v7h-7z';
@@ -32,8 +36,8 @@
     tracks: [], links: {}, contact: null,
     sel: 0, playing: false, pos: 0, dur: 0, q: '', shuf: false,
     hist: [], bag: [], corrupt: new Set(),
-    started: false, wins: { ex: { o: true, m: false }, rd: { o: false, m: false } },
-    order: ['rd', 'ex'], max: null, mv: {},
+    started: false, wins: { ex: { o: true, m: false }, gm: { o: false, m: false }, gx: { o: false, m: false }, pt: { o: false, m: false }, wc: { o: false, m: false }, rd: { o: false, m: false } },
+    order: ['rd', 'ex'], max: null, mv: {}, game: null, saver: false, idle: Date.now(), swallow: 0,
     dlg: null, lastErr: -1, opener: null,
     yt: null, ytLoading: false, poll: 0, loading: false
   };
@@ -77,6 +81,12 @@
     return null;
   }
   const topOpen = () => { for (let i = S.order.length - 1; i >= 0; i--) { const k = S.order[i]; if (k === 'sy' ? S.dlg : S.wins[k].o) return k; } return null; };
+  /* the window showing in the shared slot (phone: the active one) */
+  function slotTop() {
+    for (let i = S.order.length - 1; i >= 0; i--) { const k = S.order[i]; if (SLOT.includes(k) && S.wins[k].o && !S.wins[k].m) return k; }
+    return null;
+  }
+  const isTop = (k) => (mobile() ? activeKey() === k : slotTop() === k);
   function openWin(k) {
     const w = S.wins[k];
     if (!w.o || w.m) delete S.mv[k];
@@ -87,6 +97,7 @@
   function minWin(k) {
     S.wins[k] = { ...S.wins[k], m: true };
     if (S.max === k) S.max = null;
+    if (k === 'wc' && window.WC) window.WC.suspend(); /* the camera stops when the window is minimized */
     render();
     const tb = $('.tkb[data-k="' + k + '"]'); if (tb) tb.focus(); /* focus follows the window to its taskbar button */
   }
@@ -96,8 +107,10 @@
     S.wins[k] = { o: false, m: false };
     if (S.max === k) S.max = null;
     if (k === 'ex') reset(); /* closing the window ends playback; reopening shows the same file, idle */
+    if (k === 'gx' && window.DG) window.DG.unmount();
+    if (k === 'wc' && window.WC) window.WC.suspend();
     render();
-    if (had || document.activeElement === document.body) $('.dn .ico[data-k="' + k + '"]').focus(); /* back to where it opens from */
+    if (had || document.activeElement === document.body) $('.dn .ico[data-k="' + (ICOOF[k] || k) + '"]').focus(); /* back to where it opens from */
   }
   function focusWin(k) { if (activeKey() !== k) { S.order = front(k); render(); } }
   /* keyboard focus follows the window that was just opened or raised */
@@ -111,6 +124,33 @@
     if (w.m) openWin(k);
     else if (activeKey() === k) minWin(k);
     else openWin(k);
+  }
+  /* apps load their code the first time they open */
+  const ABASE = new URL(document.body.dataset.base || '', location.href).href; /* resolved once, before pushState changes the URL */
+  const jsLoaded = {};
+  function loadJS(path) {
+    return jsLoaded[path] || (jsLoaded[path] = new Promise((ok, no) => {
+      const el = document.createElement('script');
+      el.src = ABASE + 'assets/js/' + path + '?v=' + (document.body.dataset.v || '');
+      el.onload = ok; el.onerror = () => { delete jsLoaded[path]; no(); };
+      document.head.appendChild(el);
+    }));
+  }
+  const GAMES = ['badsector', 'treads', 'purge', 'volley'];
+  function loadGames() { return loadJS('dg.js').then(() => Promise.all(GAMES.map((g) => loadJS('games/' + g + '.js')))).then(() => { if (window.DG) window.DG.sync(); }); }
+  function appOpened(k) {
+    if (k === 'gm') loadGames().catch(() => {});
+    if (k === 'pt') loadJS('paint.js').then(() => window.PAINT && window.PAINT.init()).catch(() => {});
+    if (k === 'wc') loadJS('webcam.js').then(() => window.WC && window.WC.init()).catch(() => {});
+  }
+  function openGame(name) {
+    loadGames().then(() => {
+      S.game = name;
+      const t = 'd:\\games\\' + name + '.exe';
+      LABELS.gx = t; $('#gxtt').textContent = t; $('#w-gx').setAttribute('aria-label', name);
+      window.DG.mount(name);
+      openWin('gx'); focusInto('gx');
+    }).catch(() => showDlg({ head: 'cannot open ' + name + '.exe.', sub: '0x00 · file could not be read.', src: 'system' }));
   }
 
   /* ---------- dialog ---------- */
@@ -193,13 +233,13 @@
   }
   /* back to idle: stop, drop the embed; the selection stays */
   /* destroy() removes the player's div; make sure one exists for the next embed */
-  function ytHost() { if (!$('#yt')) { const d = document.createElement('div'); d.id = 'yt'; $('#scr').prepend(d); } }
+  function ytHost() { if (!$('#yt')) { const d = document.createElement('div'); d.id = 'yt'; $('#ythost').prepend(d); } }
   function reset() {
     stop();
     if (S.yt && S.yt.destroy) S.yt.destroy();
     S.yt = null; S.started = false; S.pos = 0;
     $('#pane').classList.remove('started');
-    ytHost();
+    ytHost(); placeYT();
   }
   function setUrl() {
     const t = S.tracks[S.sel]; if (!t) return;
@@ -306,7 +346,10 @@
   function renderProgress() {
     const pct = S.dur ? Math.min(100, (S.pos / S.dur) * 100) : 0;
     $('#segfill').style.width = pct + '%';
+    $$('.js-fill').forEach((e) => { e.style.width = pct + '%'; });
     $('#pos').textContent = fmt(S.pos); $('#dur').textContent = fmt(S.dur);
+    $$('.js-pos').forEach((e) => { e.textContent = fmt(S.pos); }); $$('.js-dur').forEach((e) => { e.textContent = fmt(S.dur); });
+    if (S.saver) renderSaverText();
     const seg = $('#seg');
     seg.setAttribute('aria-valuemax', Math.floor(S.dur));
     seg.setAttribute('aria-valuenow', Math.floor(S.pos));
@@ -337,6 +380,7 @@
   function renderPlayer() {
     const t = S.tracks[S.sel] || { name: '' };
     $('#now').textContent = t.name; $('#now-album').textContent = t.album || '';
+    $$('.js-now').forEach((e) => { e.textContent = t.name; }); $$('.js-album').forEach((e) => { e.textContent = t.album || ''; });
     $('#vname').textContent = t.name;
     $('#vstat').textContent = S.started ? (S.corrupt.has(S.sel) ? 'video: unreadable.' : t.name) : 'video: not loaded.';
     renderArt(t); renderWave();
@@ -344,9 +388,10 @@
     const msg = S.started ? (S.playing ? 'playing ' + t.name : 'paused') : '';
     if (msg !== S.said) { S.said = msg; $('#live').textContent = msg; }
     $$('[data-act=toggle]').forEach((b) => { b.setAttribute('aria-label', S.playing ? 'pause' : 'play'); $('.ip', b).setAttribute('d', S.playing ? ICON_PAUSE : ICON_PLAY); });
-    const sh = $('[data-act=shuffle]'); sh.setAttribute('aria-pressed', S.shuf); sh.classList.toggle('on', S.shuf);
+    $$('[data-act=shuffle]').forEach((sh) => { sh.setAttribute('aria-pressed', S.shuf); sh.classList.toggle('on', S.shuf); });
     const bad = S.corrupt.has(S.sel);
     $('#corrupt').hidden = !bad;
+    placeYT();
     if (bad) $('#corrupt-link').href = 'https://www.youtube.com/watch?v=' + encodeURIComponent(t.youtube);
     const pl = $('#plinks'); pl.textContent = '';
     pl.append(
@@ -356,7 +401,7 @@
     renderProgress();
   }
   /* the pane art is the album's animated svg, inlined in a shadow root so its styles stay scoped; paused unless playing */
-  const WPDIR = new URL($('#wp').dataset.dir, location.href).href, WPV = $('#wp').dataset.v || '', svgCache = {};  /* resolved once, before pushState changes the URL */
+  const WPDIR = new URL(document.body.dataset.wdir, location.href).href, WPV = document.body.dataset.wv || '', svgCache = {};  /* resolved once, before pushState changes the URL */
   function renderArt(t) {
     const host = $('#artsvg'); if (!t.album) return;
     const slug = slugify(t.album, 'dash');
@@ -375,12 +420,23 @@
   /* jittery waveform over the art, scaled by the track's recorded loudness (peaks.json, tools/peaks.py); runs only while playing */
   const WN = 96, still = matchMedia('(prefers-reduced-motion: reduce)'), wave = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   const wave2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  const wave3 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   $('#wave').append(wave); const bg = $('#wavebg'); if (bg) bg.append(wave2); /* pages built before the background wave existed lack it */
+  $('#wavesv').append(wave3);
   const jit = (i, f) => { const x = Math.sin(i * 12.9898 + f * 78.233) * 43758.5453; return (x - Math.floor(x)) * 2 - 1; };
   function drawWave(env, frame) {
     let d = '';
     for (let i = 0; i < WN; i++) d += (i ? 'L' : 'M') + (i * 120 / (WN - 1)).toFixed(1) + ' ' + (50 + jit(i, frame) * env * 45).toFixed(1);
-    wave.setAttribute('d', d); wave2.setAttribute('d', d);
+    wave.setAttribute('d', d);
+    wave2.setAttribute('d', S.playing ? d : ''); /* the desktop shows the wave only while music plays */
+    wave3.setAttribute('d', S.saver && S.playing ? d : '');
+  }
+  /* loudness 0..1 of the playing track right now (peaks.json, same data as the wave); the games take a small nudge from it */
+  function loud() {
+    const t = S.tracks[S.sel], e = t && S.env && S.env[t.name.toLowerCase()];
+    if (!S.playing || !S.yt || !e) return 0;
+    const sec = S.yt.getCurrentTime ? S.yt.getCurrentTime() : S.pos;
+    return (e.charCodeAt(Math.min(e.length - 1, Math.floor(sec * 20))) || 0) / 255;
   }
   function waveLoop() {
     S.wraf = 0;
@@ -425,9 +481,9 @@
   }
   function renderWindows() {
     const mob = mobile(); const act = activeKey();
-    ['ex', 'rd'].forEach((k) => {
+    WK.forEach((k) => {
       const el = $('#w-' + k); const w = S.wins[k];
-      el.hidden = !(w.o && !w.m);
+      el.hidden = !(w.o && !w.m) || (mob && FIXM.includes(k) && act !== k);
       el.classList.toggle('off', !mob && act !== k);
       el.classList.toggle('max', !mob && S.max === k);
       const m = S.mv[k];
@@ -435,6 +491,7 @@
       el.style.zIndex = mob ? '' : String(10 + S.order.indexOf(k));
       el.style.order = mob ? String(S.order.length - S.order.indexOf(k)) : '';
       const mx = $('.mx', el);
+      $('.mn', el).setAttribute('aria-label', 'minimize ' + LABELS[k]); $('.x', el).setAttribute('aria-label', 'close ' + LABELS[k]);
       mx.setAttribute('aria-label', (S.max === k ? 'restore ' : 'maximize ') + LABELS[k]);
       $('path', mx).setAttribute('d', S.max === k ? RESTORE_D : MAX_D);
     });
@@ -444,6 +501,8 @@
       const title = S.dlg.src === 'recycle' ? 'recycle err' : 'system';
       $('#dlgtitle').textContent = title; $('#dlgtitle-m').textContent = title;
       $('#dlghead').textContent = S.dlg.head; $('#dlgsub').textContent = S.dlg.sub;
+      const yes = $('#dlgyes'); yes.hidden = !S.dlg.yes; yes.textContent = S.dlg.yes ? S.dlg.yes.label : '';
+      $('.btn.def', sy).textContent = S.dlg.yes ? 'cancel' : 'dismiss';
       const m = S.mv.sy;
       sy.style.transform = !mob && m ? 'translate(' + m.x + 'px,' + m.y + 'px)' : '';
       sy.style.zIndex = mob ? '' : '60';
@@ -467,7 +526,7 @@
     const ft = document.activeElement && document.activeElement.closest && document.activeElement.closest('#tasks .tkb');
     const keepK = ft ? ft.dataset.k : null;
     box.textContent = '';
-    const keys = ['ex', 'rd'].filter((k) => S.wins[k].o).concat(S.dlg ? ['sy'] : []);
+    const keys = WK.filter((k) => S.wins[k].o).concat(S.dlg ? ['sy'] : []);
     const span = keys.length <= 2 ? 3 : (keys.length <= 4 ? 2 : 1);
     keys.forEach((k) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'tkb'; b.dataset.k = k;
@@ -492,17 +551,96 @@
       else if (keepK !== 'sy') $('.dn .ico[data-k="' + keepK + '"]').focus({ preventScroll: true });
     }
   }
-  /* wallpaper: animated art of the latest release; build_site.py writes only released albums, so a missing file just hides it */
-  function renderWallpaper() {
-    const img = $('#wp'), i = latest(); if (!img) return;
-    img.onerror = () => { img.hidden = true; delete img.dataset.cur; };
-    if (i === null) { img.hidden = true; return; }
-    /* compare against what we set, not img.src (which is absolute): reassigning every minute restarted the art and could blank it */
-    const src = img.dataset.dir + slugify(S.tracks[i].album, 'dash') + '.svg?v=' + (img.dataset.v || '');
-    if (img.dataset.cur !== src) { img.dataset.cur = src; img.hidden = false; img.src = src; }
+  function renderStatus() { const i = latest(); $('#status').textContent = i === null ? 'sealed' : S.tracks[i].album; }
+  function render() { renderWindows(); renderIcons(); renderTasks(); renderRows(); renderPlayer(); syncApps(); }
+  function syncApps() { if (window.DG) window.DG.sync(); placeYT(); }
+
+  /* ---------- the one youtube player ----------
+     The iframe never moves (moving it reloads it and stops the music). #ythost is fixed and laid over whichever video box is showing:
+     the media player's band, or the game's side pane. It is parked off-screen when neither is showing or something covers the box. */
+  let placeRaf = 0;
+  const schedPlace = () => { if (!placeRaf) placeRaf = requestAnimationFrame(() => { placeRaf = 0; placeYT(); }); };
+  function clipRect(el) {
+    const r = el.getBoundingClientRect(); let l = r.left, t = r.top, rt = r.right, b = r.bottom;
+    for (let p = el.parentElement; p && p !== document.documentElement; p = p.parentElement) {
+      const cs = getComputedStyle(p);
+      if (cs.overflowX !== 'visible' || cs.overflowY !== 'visible') { const q = p.getBoundingClientRect(); l = Math.max(l, q.left); t = Math.max(t, q.top); rt = Math.min(rt, q.right); b = Math.min(b, q.bottom); }
+    }
+    return { r, c: { l, t, rt, b } };
   }
-  function renderStatus() { const i = latest(); $('#status').textContent = i === null ? 'sealed' : S.tracks[i].album; renderWallpaper(); }
-  function render() { renderWindows(); renderIcons(); renderTasks(); renderRows(); renderPlayer(); }
+  function placeYT() {
+    const h = $('#ythost'); if (!h) return;
+    h.hidden = !S.started;
+    if (!S.started) return;
+    h.style.pointerEvents = 'none'; /* so elementFromPoint sees what is under it */
+    let hit = null;
+    for (let i = S.order.length - 1; i >= 0 && !hit; i--) {
+      const k = S.order[i]; if ((k !== 'ex' && k !== 'gx') || !S.wins[k].o || S.wins[k].m) continue;
+      const slot = $(k === 'ex' ? '#scr' : '#gscr'); if (!slot || !slot.getClientRects().length) continue;
+      const q = clipRect(slot), c = q.c;
+      if (c.rt - c.l < 8 || c.b - c.t < 8) continue;
+      const e = document.elementFromPoint((c.l + c.rt) / 2, (c.t + c.b) / 2);
+      if (e && (e === slot || slot.contains(e))) hit = q;
+    }
+    h.style.pointerEvents = '';
+    if (!hit) { h.style.left = '-9999px'; h.style.clipPath = ''; return; }
+    const { r, c } = hit;
+    h.style.left = r.left + 'px'; h.style.top = r.top + 'px'; h.style.width = r.width + 'px'; h.style.height = r.height + 'px';
+    h.style.clipPath = 'inset(' + (c.t - r.top) + 'px ' + (r.right - c.rt) + 'px ' + (r.bottom - c.b) + 'px ' + (c.l - r.left) + 'px)';
+  }
+
+  /* ---------- screensaver: the album art, after 60 s with no input ---------- */
+  function saverAlbum() { const i = S.started ? S.sel : latest(); return i === null || !S.tracks[i] ? null : S.tracks[i].album; }
+  function renderSaverText() {
+    const t = S.tracks[S.sel]; if (!t) return;
+    $('#svname').textContent = S.started ? t.name : '';
+    $('#svsub').textContent = S.started ? t.album + ' · ' + fmt(S.pos) + ' / ' + fmt(S.dur) : '';
+    $('#svclk').textContent = $('#clock').textContent;
+    $('.svtxt .cap', $('#saver')).hidden = !S.started;
+  }
+  function showSaver() {
+    const album = saverAlbum(); const host = $('#svart'); if (!host) return;
+    S.saver = true; S.saverAt = Date.now();
+    $('#saver').hidden = false;
+    host.classList.toggle('paused', still.matches);
+    if (album) {
+      const slug = slugify(album, 'dash');
+      if (host.dataset.slug !== slug) {
+        host.dataset.slug = slug;
+        (svgCache[slug] = svgCache[slug] || fetch(WPDIR + slug + '.svg?v=' + WPV).then((r) => r.ok ? r.text() : Promise.reject())).then((txt) => {
+          if (host.dataset.slug !== slug) return;
+          (host.shadowRoot || host.attachShadow({ mode: 'open' })).innerHTML =
+            '<style>:host{display:block}svg{display:block;width:100%;height:100%}:host(.paused) *{animation-play-state:paused!important}</style>'
+            + txt.replace('<svg ', '<svg preserveAspectRatio="xMidYMid slice" ');
+        }).catch(() => {});
+      }
+    }
+    renderSaverText(); renderWave(); placeYT();
+  }
+  function hideSaver() {
+    S.saver = false; S.idle = Date.now(); S.swallow = Date.now() + 450;
+    $('#saver').hidden = true; drawWave(0, 0); renderWave(); placeYT();
+  }
+  function wireSaver() {
+    const swallow = ['pointerup', 'mouseup', 'click', 'touchend', 'keyup', 'dblclick', 'contextmenu'];
+    const dismiss = ['pointerdown', 'mousedown', 'touchstart', 'keydown', 'wheel', 'pointermove', 'scroll'];
+    dismiss.forEach((ev) => window.addEventListener(ev, (e) => {
+      if (S.saver) {
+        if ((ev === 'pointermove' || ev === 'scroll') && Date.now() - S.saverAt < 700) return; /* the hand that settled the mouse */
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation(); hideSaver();
+      } else if (Date.now() < S.swallow && ev !== 'pointermove' && ev !== 'scroll') {
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
+      } else S.idle = Date.now();
+    }, { capture: true, passive: false }));
+    swallow.forEach((ev) => window.addEventListener(ev, (e) => { if (Date.now() < S.swallow || S.saver) { if (e.cancelable) e.preventDefault(); e.stopPropagation(); } }, true));
+    setInterval(() => {
+      if (S.saver) { renderSaverText(); return; }
+      if (window.DG && window.DG.playing()) { S.idle = Date.now(); return; } /* a game being played counts as activity */
+      if (!document.hidden && Date.now() - S.idle >= 60000) showSaver();
+    }, 1000);
+  }
 
   /* ---------- chrome: title bars, drag, clock ---------- */
   function svgBtn(cls, label, d) {
@@ -511,7 +649,7 @@
     return b;
   }
   function buildBars() {
-    ['ex', 'rd'].forEach((k) => {
+    WK.forEach((k) => {
       const bar = $('#w-' + k + ' .bar');
       const ctl = document.createElement('div'); ctl.className = 'ctl';
       const mn = svgBtn('mn', 'minimize ' + LABELS[k], 'M1 8h8'); mn.addEventListener('click', () => minWin(k));
@@ -520,7 +658,7 @@
       ctl.append(mn, mx, x);
       bar.append(ctl);
     });
-    ['ex', 'rd', 'sy'].forEach((k) => {
+    WK.concat('sy').forEach((k) => {
       const el = $('#w-' + k);
       drag(k, $('.bar', el), el);
       if (k !== 'sy') el.addEventListener('pointerdown', () => focusWin(k));
@@ -543,11 +681,12 @@
       dy = Math.max(-d.rect.top, Math.min(window.innerHeight - 82 - d.rect.top, dy));
       S.mv[k] = { x: d.ox + dx, y: d.oy + dy };
       el.style.transform = 'translate(' + S.mv[k].x + 'px,' + S.mv[k].y + 'px)';
+      schedPlace();
     });
     const up = () => {
       if (!d) return; d = null;
       const c = S.mv[k];
-      if (c && Math.abs(c.x) < 16 && Math.abs(c.y) < 16) { delete S.mv[k]; el.style.transform = ''; } /* near home: snap back to the grid */
+      if (c && Math.abs(c.x) < 16 && Math.abs(c.y) < 16) { delete S.mv[k]; el.style.transform = ''; schedPlace(); } /* near home: snap back to the grid */
     };
     bar.addEventListener('pointerup', up); bar.addEventListener('pointercancel', up);
   }
@@ -555,6 +694,7 @@
     const n = new Date(); const p = (x) => String(x).padStart(2, '0');
     const c = p(n.getHours()) + ':' + p(n.getMinutes());
     const el = $('#clock'); if (el.textContent !== c) el.textContent = c;
+    if (S.saver) $('#svclk').textContent = c;
   }
 
   /* ---------- events ---------- */
@@ -570,8 +710,11 @@
       const k = b.dataset.k;
       if (k === 'rc') { recycle(); return; }
       if (!S.wins[k].o || S.wins[k].m) openWin(k); else focusWin(k);
+      appOpened(k);
       focusInto(k);
     }));
+    $('#tiles').addEventListener('click', (e) => { const b = e.target.closest('[data-game]'); if (b) openGame(b.dataset.game); });
+    $('#clrscores').addEventListener('click', () => showDlg({ head: 'clear best scores?', sub: '0x3F · the best scores for every game on this device are removed.', src: 'system', yes: { label: 'clear', fn: () => { if (window.DG) window.DG.clearScores(); } } }));
     document.addEventListener('click', (e) => {
       const a = e.target.closest('[data-act]'); if (!a) return;
       const act = a.dataset.act;
@@ -580,6 +723,8 @@
       else if (act === 'next') step(1, false);
       else if (act === 'shuffle') { S.shuf = !S.shuf; S.bag = []; renderPlayer(); }
       else if (act === 'dismiss') dismiss();
+      else if (act === 'yes') { const f = S.dlg && S.dlg.yes && S.dlg.yes.fn; dismiss(); if (f) f(); }
+      else if (act === 'sfx') { if (window.DG) window.DG.toggleSfx(); }
     });
     $('#w-sy').addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); dismiss(); } });
     const seg = $('#seg');
@@ -593,7 +738,7 @@
     $('#tasks').addEventListener('click', (e) => {
       const b = e.target.closest('.tkb'); if (!b) return;
       const k = b.dataset.k; taskClick(k);
-      if (k !== 'sy' && S.wins[k].o && !S.wins[k].m) focusInto(k);
+      if (k !== 'sy' && S.wins[k].o && !S.wins[k].m) { appOpened(k); focusInto(k); }
     });
     /* space plays and pauses from anywhere except text fields (the youtube iframe keeps its own keys) */
     const typing = (el) => el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
@@ -604,18 +749,35 @@
     }, true);
     window.addEventListener('keyup', (e) => { if (e.key === ' ' && !typing(e.target)) e.preventDefault(); }, true);
     const orb = $('#orb');
-    const wp = $('#wp');
-    orb.addEventListener('click', () => {
-      [orb, wp].forEach((el) => { el.classList.remove('spin'); void el.offsetWidth; el.classList.add('spin'); });
-    });
-    wp.addEventListener('animationend', () => wp.classList.remove('spin'));
+    orb.addEventListener('click', () => { orb.classList.remove('spin'); void orb.offsetWidth; orb.classList.add('spin'); });
     mq.addEventListener('change', () => { if (mobile()) S.max = null; render(); });
+    window.addEventListener('resize', schedPlace);
+    document.addEventListener('scroll', schedPlace, { capture: true, passive: true });
+    if (window.ResizeObserver) { const ro = new ResizeObserver(schedPlace); ['#scr', '#gscr'].forEach((q) => ro.observe($(q))); }
+    document.addEventListener('visibilitychange', () => { if (window.DG) window.DG.sync(); });
+    window.addEventListener('blur', () => { if (window.DG) window.DG.sync(); });
+    window.addEventListener('focus', () => { if (window.DG) window.DG.sync(); });
   }
+
+  /* what the games and apps may ask of the shell */
+  window.DS = {
+    loud, base: ABASE, still: () => still.matches, mobile,
+    visible: isTop,
+    /* a game takes arrow keys only while its window is the focused one */
+    focused: () => isTop('gx') && !S.dlg && !S.saver && !document.hidden && document.hasFocus() && $('#w-gx').contains(document.activeElement),
+    confirm: (d) => showDlg({ ...d, src: 'system' }),
+    store: {
+      get(k, d) { try { const v = localStorage.getItem('dithereal.' + k); return v == null ? d : JSON.parse(v); } catch (_) { return d; } },
+      set(k, v) { try { localStorage.setItem('dithereal.' + k, JSON.stringify(v)); } catch (_) {} },
+      del(k) { try { localStorage.removeItem('dithereal.' + k); } catch (_) {} }
+    }
+  };
 
   function init() {
     document.getElementById('desk').hidden = false;
     document.getElementById('nojs').hidden = true; /* the plain listing stays up only if this script never runs */
     buildBars();
+    wireSaver();
     wire();
     load().then(() => {
       const want = document.body.dataset.track;

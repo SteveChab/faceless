@@ -23,16 +23,10 @@ button{font:inherit;color:inherit}
 .skip{position:absolute;left:8px;top:-60px;z-index:200;padding:10px 14px;background:var(--ink);color:var(--ground);font:600 14px/1 var(--sans)}
 .skip:focus{top:8px}
 
-/* ---------- wallpaper ---------- */
-/* animated art of the latest release, behind everything; cover keeps it large enough to show around the windows */
-.wp{position:fixed;left:0;top:0;width:100%;height:calc(100vh - var(--tk));height:calc(100dvh - var(--tk));object-fit:cover;opacity:.65;z-index:-1;pointer-events:none;user-select:none}
-@media (max-width:899.98px){.wp{opacity:.65}}
-/* same jittery waveform as the player art, fired down from the top edge (centre line sits on the top edge) */
+/* ---------- desktop background ---------- */
+/* blank. only while music plays, the same jittery waveform as the player art fires down from the top edge (centre line sits on the top edge) */
 .wpw{position:fixed;left:0;top:0;width:100%;height:calc(100vh - var(--tk));height:calc(100dvh - var(--tk));overflow:hidden;z-index:-1;pointer-events:none}
 .wpw .wave{top:-100%;bottom:auto;height:200%}
-/* the D click spins the wallpaper; it scales up mid-turn so the corners never show */
-.wp.spin{animation:wpspin .9s cubic-bezier(.3,.7,.2,1)}
-@keyframes wpspin{0%{rotate:0deg;scale:1}50%{rotate:180deg;scale:2.1}100%{rotate:360deg;scale:1}}
 
 /* ---------- desktop shell ---------- */
 /* desktop fits one screen: taskbar fixed, window row takes what is left; scrolls only below 640px tall */
@@ -46,8 +40,8 @@ button{font:inherit;color:inherit}
 .stack{display:contents}
 
 /* desktop icons */
-.dn{grid-column:1/2;grid-row:3;display:grid;grid-template-columns:minmax(0,1fr);row-gap:20px;align-content:start}
-.ico{display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 0 12px;text-align:center;background:none;border:0;cursor:pointer;width:100%;min-height:44px;position:relative}
+.dn{grid-column:1/2;grid-row:3;display:grid;grid-template-columns:minmax(0,1fr);row-gap:6px;align-content:start}
+.ico{display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0 8px;text-align:center;background:none;border:0;cursor:pointer;width:100%;min-height:44px;position:relative}
 .ico span{font:500 12px/1.2 var(--mono);padding:2px 4px}
 .ico:hover span{background:var(--hover)}
 .ico::after{content:"";position:absolute;left:30%;right:30%;bottom:2px;height:2px;background:transparent}
@@ -74,7 +68,7 @@ button{font:inherit;color:inherit}
 .bar :focus-visible,.ctl button:focus-visible{outline:2px solid var(--ink);outline-offset:2px} /* the close button text is dark, so never use currentColor here */
 .win.max{position:fixed;left:0;right:0;top:0;bottom:var(--tk);margin:0!important;max-height:none;z-index:70!important;transform:none!important}
 /* maximized player: video sized by height so controls and links stay on screen */
-.win.max .win.max .bar{cursor:default}
+.win.max .bar{cursor:default}
 
 #w-rd{grid-column:5/11;margin-top:56px;max-height:calc(100% - 56px)}
 #w-sy{grid-column:6/10;align-self:center;max-height:100%}
@@ -100,7 +94,7 @@ button{font:inherit;color:inherit}
 .foot{display:flex;justify-content:space-between;padding:8px 12px;border-top:2px solid var(--muted)}
 
 /* one-window layout: list + pane side by side; the video band closes the list */
-#w-ex{grid-column:3/13;align-self:stretch;max-height:none;min-height:0}
+#w-ex,#w-gm,#w-gx,#w-pt,#w-wc{grid-column:3/13;align-self:stretch;max-height:none;min-height:0}
 #w-ex .exb{display:flex;flex-direction:row;overflow:hidden}
 .exl{flex:1 1 0;min-width:0;display:flex;flex-direction:column}
 .lscroll{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto}
@@ -109,7 +103,9 @@ button{font:inherit;color:inherit}
 .art::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 2px var(--ink);pointer-events:none}
 .vband{display:flex;align-items:flex-start;gap:16px;padding:16px;border-top:2px solid var(--muted)}
 .vbox{position:relative;flex:none;width:356px;height:200px;background:#0A0A0A;overflow:hidden}
-.vbox iframe,.vbox>div{position:absolute;inset:0;width:100%;height:100%;border:0}
+/* the one youtube player: fixed, laid by app.js over whichever video box is showing; never moved in the DOM (moving an iframe reloads it) */
+.ythost{position:fixed;left:-9999px;top:0;width:356px;height:200px;z-index:75;background:#0A0A0A;overflow:hidden}
+.vbox iframe,.vbox>div,.ythost iframe,.ythost>div{position:absolute;inset:0;width:100%;height:100%;border:0}
 .vtxt{display:flex;flex-direction:column;gap:6px;min-width:0}
 .vname{font:600 16px/1.2 var(--sans);overflow-wrap:anywhere}
 .corrupt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;text-align:center;background:#0A0A0A;font:500 12px/1.5 var(--mono)}
@@ -227,3 +223,133 @@ button{font:inherit;color:inherit}
 @media (min-width:900px){.tkb .short{display:none}}
 
 
+
+/* windows that sit where the media player sits */
+#w-gx .wb{display:flex;flex-direction:row;overflow:hidden}
+.gstage{flex:1 1 0;min-width:0;position:relative;background:var(--ground)}
+.gstage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#w-gx .pane{flex:0 0 392px}
+.ytph-unused{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted)}
+.ytph svg{width:52px;height:36px}
+.keys{border-top:2px solid var(--muted);display:flex;flex-direction:column}
+.keys div{display:flex;justify-content:space-between;align-items:center;min-height:30px;font:500 13px/1 var(--sans)}
+.keys div+div{border-top:1px solid var(--line)}
+.keys .mono{font:400 12px/1 var(--mono);color:var(--muted)}
+.btns.sm .btn.sq{width:40px;height:40px}
+/* games folder */
+.tiles{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:16px;padding:16px;min-height:0}
+.tile{display:flex;flex-direction:column;gap:8px;min-height:0;background:none;border:0;padding:0;text-align:left;cursor:pointer;color:var(--ink)}
+.tile .cv{flex:1;min-height:0;position:relative;box-shadow:inset 0 0 0 2px var(--muted);background:var(--ground)}
+.tile .cv canvas{position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);display:block}
+.tile.on .cv{box-shadow:inset 0 0 0 2px var(--ink)}
+.tile .nm{display:flex;justify-content:space-between;align-items:baseline}
+.tile .nm b{font:600 16px/1 var(--sans)}
+.tile.on .nm b{background:var(--ink);color:var(--ground);padding:2px 4px;margin-left:-4px}
+.gfold{display:flex;flex-direction:column!important}
+/* screensaver */
+.saver{position:fixed;inset:0;background:#000;overflow:hidden}
+.saver .wp{height:100%;opacity:1}
+.saver .wpw{height:100%}
+.svtxt{position:absolute;left:40px;bottom:36px;display:flex;flex-direction:column;gap:4px}
+.svtxt .nowname{font-size:28px}
+.svclk{position:absolute;right:40px;top:28px}
+/* phone game window: maximized. game first, drag pad under it, the media player below the fold */
+@media (max-width:899.98px){
+  #w-gx{position:fixed;left:0;right:0;top:0;bottom:var(--tk);z-index:70}
+  #w-gx .wb{flex-direction:column;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+  .gstage{flex:none;height:min(54vh,450px)}
+  .pad{flex:none;height:calc(100dvh - var(--tk) - 48px - min(54vh,450px));min-height:200px;position:relative;border-top:2px solid var(--muted);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;overflow:hidden}
+  .pad .ar{position:absolute;width:52px;height:52px;display:flex;align-items:center;justify-content:center;font:600 34px/1 var(--sans);color:var(--ink)}
+  .pad .ar.on{background:var(--ink);color:var(--ground)}
+  .pad .u{top:12px;left:50%;transform:translateX(-50%)}.pad .d{bottom:34px;left:50%;transform:translateX(-50%)}
+  .pad .l{left:12px;top:50%;transform:translateY(-50%)}.pad .r{right:12px;top:50%;transform:translateY(-50%)}
+  .pad .hint{position:absolute;left:0;right:0;bottom:14px;text-align:center}
+  .pad .ring{position:absolute;width:76px;height:76px;margin:-38px 0 0 -38px;box-shadow:inset 0 0 0 2px var(--muted);border-radius:50%;display:none;pointer-events:none}
+  .pad .knob{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;background:var(--ink);border-radius:50%;display:none;pointer-events:none}
+  .pad.drag .ring,.pad.drag .knob{display:block}
+  #w-gx .pane{order:1;position:static;flex:none;padding:16px;gap:12px;border-left:0;border-top:2px solid var(--muted)}
+  #w-gx .pane::before{content:"media player";font:500 11px/1 var(--mono);color:var(--muted)}
+  #w-gx .vbox{width:100%;height:auto;aspect-ratio:16/9}
+  #w-gx .pane>div:has(.seg){display:none}
+}
+@media (min-width:900px){.pad{display:none}}
+/* ---------- desktop icons: six fit the column ---------- */
+/* ---------- paint ---------- */
+#w-pt .wb,#w-wc .wb{display:flex;flex-direction:row;overflow:hidden}
+.tools{flex:none;display:flex;flex-direction:column;gap:6px;padding:12px;border-right:2px solid var(--muted)}
+.tools .btn.sq{width:52px;height:52px}
+.tools .btn.sq svg{width:30px;height:30px}
+.tools .btn.sq svg *{fill:none;stroke:currentColor;stroke-width:2.5;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.tools .btn[aria-pressed=true],.chips .btn[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--ground)}
+.pstage,.wstage{flex:1 1 0;min-width:0;position:relative;display:flex;align-items:center;justify-content:center;background:var(--ground);padding:16px}
+.pstage canvas,.wstage canvas{display:block;max-width:100%;max-height:100%;image-rendering:pixelated;box-shadow:0 0 0 2px var(--muted);touch-action:none;cursor:crosshair}
+.pstage canvas{aspect-ratio:320/200;width:100%;height:auto}
+.wstage canvas{aspect-ratio:4/3;width:100%;height:auto;cursor:default}
+.ppane{flex:0 0 232px;border-left:2px solid var(--muted);padding:16px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips .btn{min-width:0;padding:0 10px}
+.pats{display:grid;grid-template-columns:repeat(4,44px);gap:6px}
+.pats button{width:44px;height:44px;padding:0;border:2px solid var(--muted);background:var(--ground);cursor:pointer}
+.pats button[aria-pressed=true]{border-color:var(--ink);box-shadow:0 0 0 2px var(--ground),0 0 0 4px var(--ink)}
+.pats canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
+.ppane .grow{flex:1}
+.range{width:100%;accent-color:var(--ink)}
+.rec{display:inline-block;width:10px;height:10px;background:var(--ink);margin-right:6px;animation:recb 1s steps(2) infinite}
+@keyframes recb{50%{opacity:0}}
+/* ---------- high scores ---------- */
+.over{position:absolute;inset:0;background:rgba(18,18,18,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px}
+.over .ovh{font:600 56px/.9 var(--sans);letter-spacing:-.04em}
+.over .t{width:min(440px,100%);background:none}
+.over .t th{background:none}
+.over .t td{height:34px}
+.tag{display:inline-flex;gap:4px}
+.tag b{display:inline-flex;width:22px;height:26px;align-items:center;justify-content:center;box-shadow:inset 0 0 0 2px var(--ground);font:500 14px/1 var(--mono)}
+.tag b.on{background:var(--ground);color:var(--ink)}
+@media (max-width:899.98px){
+  #w-pt,#w-wc{position:fixed;left:0;right:0;top:0;bottom:var(--tk);z-index:70}
+  #w-pt .wb,#w-wc .wb{flex-direction:column;overflow-y:auto}
+  .pstage,.wstage{flex:none;padding:12px}
+  .tools{flex-direction:row;flex-wrap:wrap;border-right:0;border-top:2px solid var(--muted);padding:12px 16px}
+  .ppane{flex:none;border-left:0;border-top:2px solid var(--muted);padding:12px 16px}
+  .pats{grid-template-columns:repeat(6,44px)}
+  .over .ovh{font-size:40px}
+}
+@media (max-width:899.98px){
+  .tile .nm{flex-direction:column;align-items:flex-start;gap:4px}
+  .gfold .foot{flex-direction:column;gap:4px}
+  .tiles{gap:12px;padding:12px}
+}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.two .btn{min-width:0;width:100%;height:40px;display:flex;align-items:center;justify-content:center}
+
+/* help lines: ink at 13px, not the 11px muted cap (owner, 2026-11-16) */
+.help{font:400 13px/1.45 var(--mono);color:var(--ink)}
+
+/* ---------- suite additions ---------- */
+.ico svg{pointer-events:none}
+.flink{background:none;border:0;padding:4px 0;font:inherit;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer;min-height:24px}
+.tile .cv canvas{image-rendering:auto}
+.tile:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.gstage{overflow:hidden}
+#w-gx .keys .btn[aria-pressed=false]{background:none;color:var(--ink);border-color:var(--muted)}
+.over .t td,.over .t th{padding-left:12px}
+.over .t tr.sel td{background:var(--ink);color:var(--ground)}
+.over .tag b{box-shadow:inset 0 0 0 2px var(--ground)}
+.over .tag b.on{background:var(--ground);color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
+.ppane.wide{flex-basis:260px}
+.ppane .btn.def{height:44px}
+/* screensaver: the album art, full screen. any input dismisses it */
+.saver{position:fixed;inset:0;z-index:90;background:#000;overflow:hidden;cursor:none}
+.saver:not([hidden]){animation:svin .8s ease-out}
+@keyframes svin{from{opacity:0}to{opacity:1}}
+.saver .artsvg{position:absolute;inset:0}
+.saver .wpw{position:absolute;inset:0;height:100%;z-index:1}
+.svtxt{position:absolute;left:40px;bottom:36px;display:flex;flex-direction:column;gap:4px;z-index:2}
+.svtxt .nowname{font-size:28px}
+.svclk{position:absolute;right:40px;top:28px;z-index:2}
+@media (max-width:899.98px){.svtxt{left:16px;bottom:calc(var(--tk) + 20px)}.svclk{right:16px;top:20px}}
+@media (prefers-reduced-motion:reduce){.saver:not([hidden]){animation:none}}
+/* phone: the games folder is a normal window; tiles keep a shape */
+@media (max-width:899.98px){.tile .cv{flex:none;aspect-ratio:4/3}.tiles{grid-template-rows:none}}
+@media (max-width:899.98px){#w-pt .pstage{order:0}#w-pt .tools{order:1}#w-pt .ppane{order:2}#w-wc .wstage{order:0}#w-wc .ppane{order:1}}
