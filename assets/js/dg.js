@@ -190,9 +190,9 @@
 
     /* a movement input: starts, resumes, restarts, or edits the tag */
     r.onDir = (d) => {
-      if (r.st === 'start') { r.begin(); }
-      else if (r.st === 'paused') { r.resume(); }
-      else if (r.st === 'done') { if (performance.now() > r.lock) r.begin(); }
+      if (r.st === 'start') { r.begin(); if (r.inst.press) r.inst.press(d); }
+      else if (r.st === 'paused') { r.resume(); if (r.inst.press) r.inst.press(d); }
+      else if (r.st === 'done') { if (performance.now() > r.lock) { r.begin(); if (r.inst.press) r.inst.press(d); } }
       else if (r.st === 'tag') {
         if (performance.now() < r.lock) return;
         const t = r.tag; const A = 65;
@@ -258,7 +258,7 @@
   let last = 0;
   function loop(now) {
     raf = 0;
-    const dt = Math.min(.1, (now - last) / 1000 || .016); last = now;
+    const dt = Math.max(0, Math.min(.1, (now - last) / 1000)); last = now;
     if (run && DS.visible('gx') && !document.hidden) {
       if (run.running() || run.dirty) run.frame(dt);
       if (run.running()) raf = requestAnimationFrame(loop);
@@ -302,6 +302,7 @@
     clearInterval(run.rep); if (run.ro) run.ro.disconnect(); if (raf) cancelAnimationFrame(raf); raf = 0;
     $('#gover').hidden = true; $('#gover').textContent = ''; $('#gpad').textContent = ''; run = null;
   };
+  DG.state = () => (run ? run.st : null);
   DG.playing = () => !!run && run.st === 'play' && DS.focused();
   DG.sync = () => {
     if (DS.visible('gm') && !document.hidden) startPreviews(); else stopPreviews();

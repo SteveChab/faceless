@@ -78,7 +78,7 @@
         chooseMe() {
           const p = this.p, ok = (d) => d >= 0 && open(p.x + DIRS[d][0], p.y + DIRS[d][1], false, false);
           if (ok(p.want)) p.dir = p.want;
-          else if (!ok(p.dir) || (!p.moving && p.want < 0)) { p.moving = false; return; }
+          else if (!p.moving || !ok(p.dir)) { p.moving = false; return; }
           p.nx = p.x + DIRS[p.dir][0]; p.ny = p.y + DIRS[p.dir][1]; p.moving = true;
         },
         eat() {

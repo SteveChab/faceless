@@ -353,3 +353,4 @@ button{font:inherit;color:inherit}
 /* phone: the games folder is a normal window; tiles keep a shape */
 @media (max-width:899.98px){.tile .cv{flex:none;aspect-ratio:4/3}.tiles{grid-template-rows:none}}
 @media (max-width:899.98px){#w-pt .pstage{order:0}#w-pt .tools{order:1}#w-pt .ppane{order:2}#w-wc .wstage{order:0}#w-wc .ppane{order:1}}
+@media (max-width:899.98px){.over{gap:8px;padding:12px}.over .t td{height:28px}.over .t th{padding-top:6px;padding-bottom:6px}.over .nowname{font-size:18px!important}}
