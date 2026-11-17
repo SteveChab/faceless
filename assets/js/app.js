@@ -37,7 +37,7 @@
     sel: 0, playing: false, pos: 0, dur: 0, q: '', shuf: false,
     hist: [], bag: [], corrupt: new Set(),
     started: false, wins: { ex: { o: true, m: false }, gm: { o: false, m: false }, gx: { o: false, m: false }, pt: { o: false, m: false }, wc: { o: false, m: false }, rd: { o: false, m: false } },
-    order: ['rd', 'ex'], max: null, mv: {}, game: null, saver: false, idle: Date.now(), swallow: 0,
+    order: ['rd', 'ex'], max: null, mv: {}, saver: false, idle: Date.now(), swallow: 0,
     dlg: null, lastErr: -1, opener: null,
     yt: null, ytLoading: false, poll: 0, loading: false
   };
@@ -137,7 +137,7 @@
     }));
   }
   const GAMES = ['badsector', 'treads', 'purge', 'volley'];
-  function loadGames() { return loadJS('dg.js').then(() => Promise.all(GAMES.map((g) => loadJS('games/' + g + '.js')))).then(() => { if (window.DG) window.DG.sync(); }); }
+  function loadGames() { return loadJS('dg.js').then(() => Promise.all(GAMES.map((g) => loadJS('games/' + g + '.js')))).then(syncGames); }
   function appOpened(k) {
     if (k === 'gm') loadGames().catch(() => {});
     if (k === 'pt') loadJS('paint.js').then(() => window.PAINT && window.PAINT.init()).catch(() => {});
@@ -145,7 +145,6 @@
   }
   function openGame(name) {
     loadGames().then(() => {
-      S.game = name;
       const t = 'd:\\games\\' + name + '.exe';
       LABELS.gx = t; $('#gxtt').textContent = t; $('#w-gx').setAttribute('aria-label', name);
       window.DG.mount(name);
@@ -214,8 +213,8 @@
   /* the video is a tiny, mostly hidden embed: ask for the lowest quality (YouTube treats this as a hint and may ignore it) */
   function lowQ(p) { try { p.setPlaybackQuality('tiny'); } catch (_) {} }
   function onState(e) {
-    if (e.data === window.YT.PlayerState.PLAYING || e.data === window.YT.PlayerState.BUFFERING) lowQ(e.target);
     const YS = window.YT.PlayerState;
+    if (e.data === YS.PLAYING || e.data === YS.BUFFERING) lowQ(e.target);
     if (e.data === YS.PLAYING) { S.playing = true; setLoading(false); startPoll(); }
     else if (e.data === YS.BUFFERING) { if (S.playing) setLoading(true); }
     else if (e.data === YS.PAUSED) { S.playing = false; setLoading(false); clearInterval(S.poll); }
@@ -231,9 +230,9 @@
     S.playing = false; setLoading(false); clearInterval(S.poll);
     if (S.yt && S.yt.stopVideo) S.yt.stopVideo();
   }
-  /* back to idle: stop, drop the embed; the selection stays */
   /* destroy() removes the player's div; make sure one exists for the next embed */
   function ytHost() { if (!$('#yt')) { const d = document.createElement('div'); d.id = 'yt'; $('#ythost').prepend(d); } }
+  /* back to idle: stop, drop the embed; the selection stays */
   function reset() {
     stop();
     if (S.yt && S.yt.destroy) S.yt.destroy();
@@ -335,7 +334,7 @@
     });
     if (!shown.length) {
       const tr = document.createElement('tr'); const td = document.createElement('td');
-      td.colSpan = 3; td.className = 'm'; td.style.height = '52px'; td.textContent = 'nothing found.';
+      td.colSpan = 3; td.className = 'm none'; td.textContent = 'nothing found.';
       tr.appendChild(td); tb.appendChild(tr);
     }
     const total = S.tracks.length;
@@ -373,7 +372,7 @@
     if (href) { el.href = href; el.target = '_blank'; el.rel = 'noopener'; }
     const a = document.createElement('span'); a.textContent = label;
     if (href) { const nt = document.createElement('span'); nt.className = 'sr'; nt.textContent = ' (opens in a new tab)'; a.appendChild(nt); }
-    const b = document.createElement('span'); b.className = 'mono'; b.textContent = href ? right + ' →' : '—';
+    const b = document.createElement('span'); b.className = 'mono'; b.textContent = href ? (right ? right + ' →' : '→') : '—';
     el.append(a, b);
     return el;
   }
@@ -402,10 +401,8 @@
   }
   /* the pane art is the album's animated svg, inlined in a shadow root so its styles stay scoped; paused unless playing */
   const WPDIR = new URL(document.body.dataset.wdir, location.href).href, WPV = document.body.dataset.wv || '', svgCache = {};  /* resolved once, before pushState changes the URL */
-  function renderArt(t) {
-    const host = $('#artsvg'); if (!t.album) return;
-    const slug = slugify(t.album, 'dash');
-    host.classList.toggle('paused', !S.playing);
+  function paintArt(host, album) {
+    const slug = slugify(album, 'dash');
     if (host.dataset.slug === slug) return;
     host.dataset.slug = slug;
     (svgCache[slug] = svgCache[slug] || fetch(WPDIR + slug + '.svg?v=' + WPV).then((r) => r.ok ? r.text() : Promise.reject())).then((txt) => {
@@ -415,14 +412,17 @@
         + txt.replace('<svg ', '<svg preserveAspectRatio="xMidYMid slice" ');
     }).catch(() => {});
   }
+  function renderArt(t) {
+    if (!t.album) return;
+    $('#artsvg').classList.toggle('paused', !S.playing);
+    paintArt($('#artsvg'), t.album);
+  }
   /* rows scroll-margin-top follows the pinned block's height */
   if (window.ResizeObserver) new ResizeObserver(([e]) => document.documentElement.style.setProperty('--pin', e.target.offsetHeight + 'px')).observe($('#pane'));
   /* jittery waveform over the art, scaled by the track's recorded loudness (peaks.json, tools/peaks.py); runs only while playing */
-  const WN = 96, still = matchMedia('(prefers-reduced-motion: reduce)'), wave = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  const wave2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  const wave3 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  $('#wave').append(wave); const bg = $('#wavebg'); if (bg) bg.append(wave2); /* pages built before the background wave existed lack it */
-  $('#wavesv').append(wave3);
+  const WN = 96, still = matchMedia('(prefers-reduced-motion: reduce)');
+  const wavePath = (svg) => { const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); $(svg).append(p); return p; };
+  const wave = wavePath('#wave'), wave2 = wavePath('#wavebg'), wave3 = wavePath('#wavesv');
   const jit = (i, f) => { const x = Math.sin(i * 12.9898 + f * 78.233) * 43758.5453; return (x - Math.floor(x)) * 2 - 1; };
   function drawWave(env, frame) {
     let d = '';
@@ -431,20 +431,20 @@
     wave2.setAttribute('d', S.playing ? d : ''); /* the desktop shows the wave only while music plays */
     wave3.setAttribute('d', S.saver && S.playing ? d : '');
   }
-  /* loudness 0..1 of the playing track right now (peaks.json, same data as the wave); the games take a small nudge from it */
-  function loud() {
+  /* the playing track's loudness (0..1) and position right now, from peaks.json; null when nothing plays or there is no data */
+  function level() {
     const t = S.tracks[S.sel], e = t && S.env && S.env[t.name.toLowerCase()];
-    if (!S.playing || !S.yt || !e) return 0;
+    if (!S.playing || !S.yt || !e) return null;
     const sec = S.yt.getCurrentTime ? S.yt.getCurrentTime() : S.pos;
-    return (e.charCodeAt(Math.min(e.length - 1, Math.floor(sec * 20))) || 0) / 255;
+    return { env: (e.charCodeAt(Math.min(e.length - 1, Math.floor(sec * 20))) || 0) / 255, sec };
   }
+  const loud = () => { const l = level(); return l ? l.env : 0; }; /* the games take a small nudge from it */
   function waveLoop() {
     S.wraf = 0;
-    const t = S.tracks[S.sel], e = t && S.env[t.name.toLowerCase()];
-    if (!S.playing || !S.yt || !e || still.matches) { drawWave(0, 0); return; }
-    const sec = S.yt.getCurrentTime ? S.yt.getCurrentTime() : S.pos;
-    const env = (e.charCodeAt(Math.min(e.length - 1, Math.floor(sec * 20))) || 0) / 255, fr = Math.floor(sec * 30), key = env + ':' + fr;
-    if (key !== S.wkey) { S.wkey = key; drawWave(env, fr); }
+    const l = level();
+    if (!l || still.matches) { drawWave(0, 0); return; }
+    const fr = Math.floor(l.sec * 30), key = l.env + ':' + fr;
+    if (key !== S.wkey) { S.wkey = key; drawWave(l.env, fr); }
     S.wraf = requestAnimationFrame(waveLoop);
   }
   function renderWave() {
@@ -459,11 +459,9 @@
     const box = $('#rdlinks'); box.textContent = '';
     ['youtube', 'bandcamp', 'tiktok'].forEach((k) => {
       const row = linkRow('lnk', k, '', S.links[k] || null);
-      const lab = row.firstChild; lab.style.display = 'flex'; lab.style.alignItems = 'center'; lab.style.gap = '12px';
-      lab.prepend(icon(k, 20));
+      row.firstChild.prepend(icon(k, 20));
       box.appendChild(row);
     });
-    $$('.lnk .mono', box).forEach((m) => { if (m.textContent === ' →') m.textContent = '→'; });
     const tray = $('#tray'); tray.textContent = '';
     ['youtube', 'bandcamp', 'tiktok'].forEach((k) => {
       if (!S.links[k]) return;
@@ -499,7 +497,7 @@
     sy.hidden = !S.dlg;
     if (S.dlg) {
       const title = S.dlg.src === 'recycle' ? 'recycle err' : 'system';
-      $('#dlgtitle').textContent = title; $('#dlgtitle-m').textContent = title;
+      $('#dlgtitle').textContent = title;
       $('#dlghead').textContent = S.dlg.head; $('#dlgsub').textContent = S.dlg.sub;
       const yes = $('#dlgyes'); yes.hidden = !S.dlg.yes; yes.textContent = S.dlg.yes ? S.dlg.yes.label : '';
       $('.btn.def', sy).textContent = S.dlg.yes ? 'cancel' : 'dismiss';
@@ -510,7 +508,7 @@
     }
   }
   function renderIcons() {
-    const mob = mobile(); const act = activeKey();
+    const act = activeKey();
     $$('.dn .ico').forEach((b) => {
       const k = b.dataset.k;
       if (k === 'rc') { const on = !!(S.dlg && S.dlg.src === 'recycle'); b.className = 'ico' + (on ? ' on' : ''); return; }
@@ -553,7 +551,8 @@
   }
   function renderStatus() { const i = latest(); $('#status').textContent = i === null ? 'sealed' : S.tracks[i].album; }
   function render() { renderWindows(); renderIcons(); renderTasks(); renderRows(); renderPlayer(); syncApps(); }
-  function syncApps() { if (window.DG) window.DG.sync(); if (window.WC) window.WC.kick(); placeYT(); }
+  const syncGames = () => { if (window.DG) window.DG.sync(); };
+  function syncApps() { syncGames(); if (window.WC) window.WC.kick(); placeYT(); }
 
   /* ---------- the one youtube player ----------
      The iframe never moves (moving it reloads it and stops the music). #ythost is fixed and laid over whichever video box is showing:
@@ -603,18 +602,7 @@
     S.saver = true; S.saverAt = Date.now();
     $('#saver').hidden = false;
     host.classList.toggle('paused', still.matches);
-    if (album) {
-      const slug = slugify(album, 'dash');
-      if (host.dataset.slug !== slug) {
-        host.dataset.slug = slug;
-        (svgCache[slug] = svgCache[slug] || fetch(WPDIR + slug + '.svg?v=' + WPV).then((r) => r.ok ? r.text() : Promise.reject())).then((txt) => {
-          if (host.dataset.slug !== slug) return;
-          (host.shadowRoot || host.attachShadow({ mode: 'open' })).innerHTML =
-            '<style>:host{display:block}svg{display:block;width:100%;height:100%}:host(.paused) *{animation-play-state:paused!important}</style>'
-            + txt.replace('<svg ', '<svg preserveAspectRatio="xMidYMid slice" ');
-        }).catch(() => {});
-      }
-    }
+    if (album) paintArt(host, album);
     renderSaverText(); renderWave(); placeYT();
   }
   function hideSaver() {
@@ -754,13 +742,15 @@
     window.addEventListener('resize', schedPlace);
     document.addEventListener('scroll', schedPlace, { capture: true, passive: true });
     if (window.ResizeObserver) { const ro = new ResizeObserver(schedPlace); ['#scr', '#gscr'].forEach((q) => ro.observe($(q))); }
-    document.addEventListener('visibilitychange', () => { if (window.DG) window.DG.sync(); });
-    window.addEventListener('blur', () => { if (window.DG) window.DG.sync(); });
-    window.addEventListener('focus', () => { if (window.DG) window.DG.sync(); });
+    document.addEventListener('visibilitychange', syncGames);
+    window.addEventListener('blur', syncGames);
+    window.addEventListener('focus', syncGames);
   }
 
-  /* what the games and apps may ask of the shell */
+  /* what the games and apps may ask of the shell; BAYER and rng are shared by the games, paint and webcam */
   window.DS = {
+    BAYER: [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5],
+    rng: (a) => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; },
     loud, base: ABASE, still: () => still.matches, mobile,
     visible: isTop,
     /* a game takes arrow keys only while its window is the focused one */

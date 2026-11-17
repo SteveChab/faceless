@@ -5,15 +5,15 @@
 
   DG.games.volley = {
     meta: {
-      title: 'volley', cap: 'rally', rules: 'first to 11. it serves itself. w and s hand the right paddle to a friend.', axes: 'y',
+      cap: 'rally', rules: 'first to 11. it serves itself. w and s hand the right paddle to a friend.', axes: 'y',
       hint: 'drag up or down · it serves itself', keytxt: 'move', keys: '↑ ↓', p2: true, note: 'serves itself after each point. pauses when the window loses focus.',
       over: 'match over.', best: (e) => e.my + '–' + e.opp, show: (e) => e.my + '–' + e.opp
     },
     create(env, seed) {
       const g = {
-        env, v: null, WW: 640, H: 400, t: 0, over: false, my: 0, opp: 0, two: false, noScore: false, returns: 0,
+        env, WW: 640, H: 400, t: 0, over: false, my: 0, opp: 0, two: false, noScore: false, returns: 0,
         by: 0, bx: 0, vx: 0, vy: 0, sv: 1, dirTo: 1, ly: 0, ry: 0, aiErr: 0, trail: [], trT: 0, lh: new Array(26).fill(0), lhT: 0, botT: 0,
-        resize(w, h, top) { this.v = { w, h, top }; this.WW = (h - top) / w > 1.05 ? 420 : 640; this.H = (h - top) / (w / this.WW); this.ph = Math.round(this.WW * .115); this.pw = 12; this.bs = 12; if (!this.ly) this.reset(1); },
+        resize(w, h, top) { this.WW = (h - top) / w > 1.05 ? 420 : 640; this.H = (h - top) / (w / this.WW); this.ph = Math.round(this.WW * .115); this.pw = 12; this.bs = 12; if (!this.ly) this.reset(1); },
         reset(to) { this.bx = this.WW / 2 - this.bs / 2; this.by = this.H / 2 - this.bs / 2; this.vx = this.vy = 0; this.sv = 1; this.dirTo = to; this.trail = []; this.returns = 0; this.ly = this.ly || this.H / 2 - this.ph / 2; this.ry = this.ry || this.H / 2 - this.ph / 2; },
         sp0() { return this.WW * .47; },
         launch() { const a = (Math.random() - .5) * .7, sp = this.sp0(); this.vx = Math.cos(a) * sp * this.dirTo; this.vy = Math.sin(a) * sp; this.env.sfx('serve'); },
@@ -48,13 +48,13 @@
           if (!hit(L, this.ly, 1)) hit(R, this.ry, -1);
           /* positions for the four fading outlines, taken from the real path */
           this.trT -= dt; if (this.trT <= 0) { this.trT = .045; this.trail.unshift([this.bx, this.by]); this.trail.length = Math.min(this.trail.length, 4); }
-          if (this.bx < -bs * 2) { this.opp++; this.score_(-1); }
-          else if (this.bx > WW + bs) { this.my++; this.score_(1); }
+          if (this.bx < -bs * 2) { this.opp++; this.point(-1); }
+          else if (this.bx > WW + bs) { this.my++; this.point(1); }
         },
-        score_(who) {
+        point(who) {
           this.env.sfx('score');
           if (this.my >= 11 || this.opp >= 11) { this.over = true; return; }
-          this.reset(who > 0 ? 1 : -1); this.vx = this.vy = 0; this.sv = 1;
+          this.reset(who > 0 ? 1 : -1);
         },
         draw(x, v) {
           x.setTransform(1, 0, 0, 1, 0, 0); x.fillStyle = GR; x.fillRect(0, 0, x.canvas.width, x.canvas.height);

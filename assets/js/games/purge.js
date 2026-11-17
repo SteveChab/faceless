@@ -8,7 +8,7 @@
 
   DG.games.purge = {
     meta: {
-      title: 'purge', cap: 'shooter', rules: 'slide left and right. it fires on its own. purge the glitches.', axes: 'x',
+      cap: 'shooter', rules: 'slide left and right. it fires on its own. purge the glitches.', axes: 'x',
       hint: 'drag left or right · always firing', keytxt: 'move', keys: '← →', note: 'always firing. pauses when the window loses focus.',
       over: 'process ended.', best: (e) => DG.fmtN(e.score), show: (e) => DG.fmtN(e.score)
     },
@@ -16,9 +16,9 @@
       const rnd = DG.rng(seed);
       const stars = Array.from({ length: 26 }, () => [rnd() * W, rnd(), 10 + rnd() * 30]);
       const g = {
-        H: 360, v: null, env, score: 0, lives: 3, wave: 0, over: false, t: 0, px: W / 2, inv: 0, fireT: 0, eT: 1, wait: 0,
+        H: 360, env, score: 0, lives: 3, wave: 0, over: false, t: 0, px: W / 2, inv: 0, fireT: 0, eT: 1, wait: 0,
         en: [], shots: [], eshots: [], fx: 0, fy: 0, fdir: 1, sp: 24, botT: 0, botDir: 0,
-        resize(w, h, top) { this.v = { w, h, top }; this.H = (h - top) / (w / W); },
+        resize(w, h, top) { this.H = (h - top) / (w / W); },
         spawn() {
           this.wave++; const rows = Math.min(5, 2 + Math.ceil(this.wave / 2)); this.en = [];
           for (let r = 0; r < rows; r++) for (let c = 0; c < COLS; c++) this.en.push({ c, r, hp: r === 0 ? 2 : 1, seed: r * 31 + 7, rows });

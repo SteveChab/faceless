@@ -5,10 +5,9 @@
   const DS = window.DS;
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-  const rng = (a) => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const { BAYER, rng } = DS;
   const mmss = (s) => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
-  let ready = false, setSource = () => {}, stopRec = () => {}, kick = () => {};
+  let ready = false, setSource = () => {}, stopRec = () => {}, kick = () => {}, suspend = () => {};
 
   function init() {
     if (ready) { kick(); return; } ready = true;
@@ -108,7 +107,7 @@
       mr.start(); rb.innerHTML = '<span class="rec"></span>stop 0:00'; msg.textContent = 'recording. stop saves the clip.';
     });
     /* the camera stops when the window closes or is minimized */
-    WC.suspend = () => { stopRec(); if (isCam) { dropVideo(); setSource('test'); msg.textContent = 'camera off. showing the test source.'; } };
+    suspend = () => { stopRec(); if (isCam) { dropVideo(); setSource('test'); msg.textContent = 'camera off. showing the test source.'; } };
   }
-  const WC = window.WC = { init, suspend: () => {}, kick: () => kick() };
+  const WC = window.WC = { init, suspend: () => suspend(), kick: () => kick() };
 })();

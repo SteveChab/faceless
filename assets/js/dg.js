@@ -6,10 +6,11 @@
   const $ = (s, r = document) => r.querySelector(s);
   const GR = '#121212', PN = '#1C1C1C', INK = '#ECECE6', MU = '#A8A8A0', LN = '#3A3A36', C = '#7FFF00', K = '#000';
   const DG = window.DG = { games: {}, col: { GR, PN, INK, MU, LN, C, K } };
+  const idle = () => ({ l: 0, r: 0, u: 0, d: 0, w: 0, s: 0 });
 
   /* ---------- drawing helpers shared by the games ---------- */
-  DG.rng = (a) => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
-  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  DG.rng = DS.rng;
+  const BAYER = DS.BAYER;
   DG.dither = (x, X, Y, w, h, d, px, col) => { x.fillStyle = col; for (let j = 0, yy = Y; yy < Y + h; yy += px, j++) for (let i = 0, xx = X; xx < X + w; xx += px, i++) if ((BAYER[(i & 3) + (j & 3) * 4] + .5) / 16 < d) x.fillRect(xx, yy, px, px); };
   DG.hatch = (x, bx, by, bw, bh, step, lw, col) => { x.strokeStyle = col; x.lineWidth = lw; x.beginPath(); for (let k = -bh; k < bw; k += step) { x.moveTo(bx + k, by + bh); x.lineTo(bx + k + bh, by); } x.stroke(); };
   DG.mix = (a, b, f) => { const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); const A = p(a), B = p(b); return 'rgb(' + A.map((v, i) => Math.round(v + (B[i] - v) * f)).join(',') + ')'; };
@@ -22,7 +23,7 @@
     return SPR[seed] = g;
   };
   DG.px = (x, map, X, Y, p, col) => { x.fillStyle = col; map.forEach((row, j) => [...row].forEach((v, i) => { if (v === true || v === '#') x.fillRect(X + i * p, Y + j * p, p, p); })); };
-  DG.MONO = '400 12px "IBM Plex Mono",ui-monospace,monospace';
+  const MONO = '400 12px "IBM Plex Mono",ui-monospace,monospace';
   DG.fmtN = (n) => Math.round(n).toLocaleString('en-US');
   /* world scaling: a fixed world width, height from the stage's shape; one transform, so rules never depend on pixel size */
   DG.world = (x, v, WW) => { const s = v.w / WW; x.setTransform(v.dpr * s, 0, 0, v.dpr * s, 0, v.top * v.dpr); return { s, H: (v.h - v.top) / s }; };
@@ -62,7 +63,6 @@
   const okEntry = (e) => e && typeof e.tag === 'string' && typeof e.score === 'number' && isFinite(e.score);
   const scores = (n) => { const a = DS.store.get('scores.' + n, []); return (Array.isArray(a) ? a.filter(okEntry) : []).slice(0, 5); };
   const cmp = (a, b) => b.score - a.score;
-  function meta(n) { return DG.games[n].meta; }
   DG.refreshTiles = () => {
     NAMES.forEach((n) => {
       const t = $('.tile[data-game="' + n + '"] [data-cap]'); const g = DG.games[n]; if (!t || !g) return;
@@ -120,19 +120,21 @@
 
   function sizeCanvas(cv, cssW, cssH, dpr) { const w = Math.max(10, Math.round(cssW * dpr)), h = Math.max(10, Math.round(cssH * dpr)); if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; } }
 
-  function makeInst(name, mode, runner) {
-    const g = DG.games[name];
-    const env = { loud: () => (mode === 'play' && runner ? DS.loud() : 0), sfx: (n) => { if (runner && runner.st === 'play' && !runner.attract) playSfx(n); }, still: DS.still() };
-    return g.create(env, (Math.random() * 1e9) | 0);
+  /* a game instance; previews pass no runner, so they are silent and ignore the music */
+  function makeInst(name, runner) {
+    const env = { loud: () => (runner ? DS.loud() : 0), sfx: (n) => { if (runner && runner.st === 'play' && !runner.attract) playSfx(n); }, still: DS.still() };
+    return DG.games[name].create(env, (Math.random() * 1e9) | 0);
   }
 
   function Run(name) {
-    const g = DG.games[name], m = g.meta, cv = $('#gcv'), x = cv.getContext('2d'), stage = $('#gstage'), over = $('#gover'), pad = $('#gpad');
+    const g = DG.games[name], m = g.meta, cv = $('#gcv'), x = cv.getContext('2d'), stage = $('#gstage'), over = $('#gover');
     const r = {
-      name, st: 'start', attract: true, inp: { l: 0, r: 0, u: 0, d: 0, w: 0, s: 0 }, keys: {}, padDir: '', acc: 0, t: 0, readyT: 0, lock: 0, dpr: 1, w: 0, h: 0, top: 36,
-      tag: null, pend: null, botInp: { l: 0, r: 0, u: 0, d: 0, w: 0, s: 0 }, resetAt: 0, dirty: true, rep: 0
+      name, st: 'start', attract: true, inp: idle(), keys: {}, padDir: '', acc: 0, t: 0, readyT: 0, lock: 0, dpr: 1, w: 0, h: 0, top: 36,
+      tag: null, pend: null, botInp: idle(), resetAt: 0, dirty: true, rep: 0
     };
-    r.inst = makeInst(name, 'play', r);
+    /* a fresh game at the current stage size */
+    r.fresh = () => { r.inst = makeInst(name, r); r.inst.resize(r.w, r.h, r.top); };
+    r.inst = makeInst(name, r);
     r.mapInp = () => { ['l', 'r', 'u', 'd', 'w', 's'].forEach((d) => { r.inp[d] = (r.keys[d] || (d === r.padDir)) ? 1 : 0; }); };
 
     r.resize = () => {
@@ -143,7 +145,7 @@
 
     /* ---- overlay screens (start, game over, tag entry) ---- */
     const table = (list, selIdx, tagEl) => {
-      let h = '<table class="t"><thead><tr><th style="width:40px">#</th><th>tag</th><th style="width:130px">score</th><th style="width:100px">date</th></tr></thead><tbody>';
+      let h = '<table class="t"><thead><tr><th>#</th><th>tag</th><th>score</th><th>date</th></tr></thead><tbody>';
       for (let i = 0; i < 5; i++) {
         const e = list[i];
         if (!e) { h += '<tr><td class="m">' + (i + 1) + '</td><td class="m">—</td><td class="m">—</td><td class="m">—</td></tr>'; continue; }
@@ -157,7 +159,7 @@
       over.hidden = false;
       if (r.st === 'start') {
         over.innerHTML = '<span class="cap">d:\\games\\' + name + '.exe</span><div class="ovh">' + name + '</div><span class="cap">' + m.cap + ' · ' + m.rules + '</span>' + table(scores(name), -1) +
-          '<div class="nowname" style="font-size:20px">press an arrow to start.</div><span class="cap">on a phone: drag, or tap an arrow</span>';
+          '<div class="nowname">press an arrow to start.</div><span class="cap">on a phone: drag, or tap an arrow</span>';
       } else if (r.st === 'tag' || r.st === 'done') {
         const rank = r.pend ? ' · new best #' + (r.pend.idx + 1) : '';
         const lst = r.pend ? r.pend.all : scores(name);
@@ -168,7 +170,7 @@
     };
 
     /* ---- state changes ---- */
-    r.begin = () => { r.inst = makeInst(name, 'play', r); r.inst.resize(r.w, r.h, r.top); r.attract = false; r.st = 'ready'; r.readyT = 1.35; r.pend = null; r.acc = 0; r.showOverlay(); r.dirty = true; kick(); };
+    r.begin = () => { r.fresh(); r.attract = false; r.st = 'ready'; r.readyT = 1.35; r.pend = null; r.acc = 0; r.showOverlay(); r.dirty = true; kick(); };
     r.resume = () => { r.st = 'ready'; r.readyT = 1.35; r.dirty = true; kick(); };
     r.finish = () => {
       r.lock = performance.now() + 900;
@@ -227,7 +229,7 @@
           if (attract) { r.inst.bot(STEP, r.botInp); r.inst.step(STEP, r.botInp); } else r.inst.step(STEP, r.inp);
           r.acc -= STEP; r.t += STEP;
         }
-        if (r.inst.over) { if (attract) { if (!r.resetAt) r.resetAt = performance.now() + 1500; else if (performance.now() > r.resetAt) { r.inst = makeInst(name, 'play', r); r.inst.resize(r.w, r.h, r.top); r.resetAt = 0; } } else { r.finish(); } }
+        if (r.inst.over) { if (attract) { if (!r.resetAt) r.resetAt = performance.now() + 1500; else if (performance.now() > r.resetAt) { r.fresh(); r.resetAt = 0; } } else { r.finish(); } }
         r.dirty = true;
       }
       if (r.dirty) { r.draw(); r.dirty = false; }
@@ -237,7 +239,7 @@
       r.inst.draw(x, v);
       x.setTransform(r.dpr, 0, 0, r.dpr, 0, 0);
       if (r.st !== 'start' && r.st !== 'tag' && r.st !== 'done') {
-        const h = r.inst.hud(); x.font = DG.MONO;
+        const h = r.inst.hud(); x.font = MONO;
         if (x.measureText(h[0]).width + x.measureText(h[1]).width + 48 < r.w) { capText(x, h[0], 16, 24, 'left'); capText(x, h[1], r.w - 16, 24, 'right'); }
         else { capText(x, h[0], 16, 18, 'left'); capText(x, h[1], 16, 35, 'left'); }
       }
@@ -247,7 +249,7 @@
     };
     return r;
   }
-  function capText(x, txt, X, Y, align) { x.font = DG.MONO; x.fillStyle = MU; x.textAlign = align; x.textBaseline = 'alphabetic'; x.fillText(txt, X, Y); x.textAlign = 'left'; }
+  function capText(x, txt, X, Y, align) { x.font = MONO; x.fillStyle = MU; x.textAlign = align; x.textBaseline = 'alphabetic'; x.fillText(txt, X, Y); x.textAlign = 'left'; }
   function inkText(x, txt, X, Y) {
     x.font = '500 14px "IBM Plex Mono",ui-monospace,monospace'; x.textAlign = 'center'; x.textBaseline = 'middle';
     const w = x.measureText(txt).width + 28; x.fillStyle = GR; x.fillRect(X - w / 2, Y - 18, w, 36); x.lineWidth = 2; x.strokeStyle = INK; x.strokeRect(X - w / 2 + 1, Y - 17, w - 2, 34);
@@ -265,22 +267,32 @@
     }
   }
   function kick() { if (!raf && run && (run.running() || run.dirty) && DS.visible('gx') && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(loop); } }
+  /* one preview tick: the bot plays the real engine, a finished game restarts after 1.5 s */
+  function stepPreview(p, now, dt) {
+    p.acc += Math.max(dt, .08);
+    for (let n = 0; p.acc >= STEP && n < 5; n++) { p.inst.bot(STEP, p.inp); p.inst.step(STEP, p.inp); p.acc -= STEP; p.t += STEP; }
+    if (p.inst.over) {
+      if (!p.rs) p.rs = now + 1500;
+      else if (now > p.rs) { p.inst = makeInst(p.name); p.inst.resize(p.w, p.h, 6); p.rs = 0; }
+    }
+    p.inst.draw(p.x, { w: p.w, h: p.h, dpr: p.dpr, top: 6, t: p.t, live: true });
+  }
   function ploop(now) {
     prafT = 0;
     if (!prevs.length || document.hidden || !DS.visible('gm')) return;
     const dt = Math.min(.1, (now - (ploop.last || now)) / 1000);
-    if (dt >= .075 || !ploop.last) { ploop.last = now; prevs.forEach((p) => { p.acc += Math.max(dt, .08); let n = 0; while (p.acc >= STEP && n++ < 5) { p.inst.bot(STEP, p.inp); p.inst.step(STEP, p.inp); p.acc -= STEP; p.t += STEP; } if (p.inst.over) { if (!p.rs) p.rs = now + 1500; else if (now > p.rs) { p.inst = makeInst(p.name, 'preview'); p.inst.resize(p.w, p.h, 6); p.rs = 0; } } p.inst.draw(p.x, { w: p.w, h: p.h, dpr: p.dpr, top: 6, t: p.t, live: true }); }); }
+    if (dt >= .075 || !ploop.last) { ploop.last = now; prevs.forEach((p) => stepPreview(p, now, dt)); }
     prafT = requestAnimationFrame(ploop);
   }
   function startPreviews() {
     if (prevs.length) { if (!prafT) prafT = requestAnimationFrame(ploop); return; }
     document.querySelectorAll('canvas[data-prev]').forEach((cv) => {
       const n = cv.dataset.prev; if (!DG.games[n]) return;
-      const b = cv.getBoundingClientRect(); const dpr = 1;
+      const b = cv.getBoundingClientRect();
       if (b.width < 20) return;
-      cv.width = Math.round(b.width * dpr); cv.height = Math.round(b.height * dpr);
-      const p = { name: n, cv, x: cv.getContext('2d'), w: b.width, h: b.height, dpr, acc: 0, t: 0, inp: { l: 0, r: 0, u: 0, d: 0, w: 0, s: 0 }, rs: 0 };
-      p.inst = makeInst(n, 'preview'); p.inst.resize(p.w, p.h, 6); prevs.push(p);
+      cv.width = Math.round(b.width); cv.height = Math.round(b.height);
+      const p = { name: n, x: cv.getContext('2d'), w: b.width, h: b.height, dpr: 1, acc: 0, t: 0, inp: idle(), rs: 0 };
+      p.inst = makeInst(n); p.inst.resize(p.w, p.h, 6); prevs.push(p);
     });
     DG.refreshTiles(); ploop.last = 0; prafT = prevs.length ? requestAnimationFrame(ploop) : 0;
   }
@@ -302,7 +314,6 @@
     clearInterval(run.rep); if (run.ro) run.ro.disconnect(); if (raf) cancelAnimationFrame(raf); raf = 0;
     $('#gover').hidden = true; $('#gover').textContent = ''; $('#gpad').textContent = ''; run = null;
   };
-  DG.state = () => (run ? run.st : null);
   DG.playing = () => !!run && run.st === 'play' && DS.focused();
   DG.sync = () => {
     if (DS.visible('gm') && !document.hidden) startPreviews(); else stopPreviews();
@@ -311,7 +322,7 @@
   };
   /* arrows are only taken while the game window is the focused one, so the rest of the page keeps working by keyboard */
   window.addEventListener('keydown', (e) => { if (run && DS.focused() && !e.ctrlKey && !e.metaKey && !e.altKey && run.key(e, true)) { e.preventDefault(); e.stopPropagation(); kick(); } }, true);
-  window.addEventListener('keyup', (e) => { if (run && run.key(e, false)) { /* keep default */ } }, true);
-  window.addEventListener('blur', () => { if (run) { run.release(); } });
+  window.addEventListener('keyup', (e) => { if (run) run.key(e, false); }, true);
+  window.addEventListener('blur', () => { if (run) run.release(); });
   DG.refreshTiles();
 })();

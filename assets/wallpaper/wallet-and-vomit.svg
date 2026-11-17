@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000" role="img" aria-label="wallet and vomit artwork by dithereal: a wallet with chartreuse sick pouring out of it and dripping down the front"><style>svg [class]{transform-box:fill-box;transform-origin:center;animation-iteration-count:infinite;animation-timing-function:ease-in-out}
+.pivot{animation-name:pivot;animation-direction:alternate}
+@keyframes pivot{from{transform:rotate(calc(var(--d) * -1))}to{transform:rotate(var(--d))}}
+.fade{animation-name:fade}
+@keyframes fade{50%{opacity:.35}}
+.swell{animation-name:swell}
+@keyframes swell{0%,100%{transform:scale(.55)}50%{transform:scale(1.2)}}
+.sweep{animation-name:sweep}
+@keyframes sweep{0%,100%{opacity:.25}50%{opacity:1}}
+.glow{animation-name:glow}
+@keyframes glow{0%,100%{filter:drop-shadow(0 0 0 #7fff00)}50%{filter:drop-shadow(0 0 7px #7fff00)}}
+.lid{animation-name:lid;animation-duration:8s}
+@keyframes lid{0%,62%,100%{transform:scaleY(1)}70%,80%{transform:scaleY(.03)}90%{transform:scaleY(1)}}
+path.lid{vector-effect:non-scaling-stroke}
+.ripple{animation-name:ripple;animation-duration:6s}
+@keyframes ripple{0%,100%{transform:scaleY(.7)}50%{transform:scaleY(1.2)}}
+.reel{animation-name:spin;animation-timing-function:linear}
+@keyframes spin{to{transform:rotate(360deg)}}
+.turn{animation-name:spinfrom;animation-timing-function:linear}
+@keyframes spinfrom{from{transform:rotate(var(--a))}to{transform:rotate(calc(var(--a) + 360deg))}}
+.dust{animation-name:dust}
+@keyframes dust{0%,100%{transform:translate(0,0);opacity:.2}50%{transform:translate(var(--dx),var(--dy));opacity:1}}
+.fur{animation-name:fur;animation-direction:alternate}
+@keyframes fur{from{transform:rotate(calc(var(--d) * -1)) scale(1)}to{transform:rotate(var(--d)) scale(var(--s))}}
+.fur{vector-effect:non-scaling-stroke}
+.wink{animation-name:wink;animation-duration:6s}
+@keyframes wink{0%,55%,100%{transform:scaleY(1)}62%,72%{transform:scaleY(.08)}80%{transform:scaleY(1)}}
+.slice{animation-name:slice;animation-duration:8s;animation-timing-function:steps(1,end)}
+@keyframes slice{0%,90%{translate:0 0}92%{translate:var(--j) 0}94%{translate:calc(var(--j) * -.5) 0}96%{translate:calc(var(--j) * .3) 0}98%,100%{translate:0 0}}
+.flicker{animation-name:flicker;animation-timing-function:steps(1,end)}
+@keyframes flicker{0%,70%{opacity:1}72%{opacity:.2}75%{opacity:1}78%{opacity:.4}80%,100%{opacity:1}}
+.drip{animation-name:drip;transform-origin:50% 0}
+@keyframes drip{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1.12)}}
+.bob{animation-name:bob}
+@keyframes bob{0%,100%{transform:translateY(-16px)}50%{transform:translateY(16px)}}
+.puddle{animation-name:puddle}
+@keyframes puddle{0%,100%{transform:scaleX(.88)}50%{transform:scaleX(1.12)}}
+.sun{animation-name:sun;animation-duration:7s!important}
+@keyframes sun{0%,100%{transform:scale(.92);filter:drop-shadow(0 0 0 #7fff00)}50%{transform:scale(1.14);filter:drop-shadow(0 0 40px #7fff00)}}
+.ring{animation-name:ring;animation-duration:8s}
+@keyframes ring{0%,100%{opacity:.2}50%{opacity:1}}
+.twinkle{animation-name:twinkle}
+@keyframes twinkle{0%,100%{opacity:.15}50%{opacity:1}}
+.orbit{animation-name:spin}
+.thick{animation-name:thick}
+.gaze{animation-name:gaze;animation-duration:16s;transform-box:view-box}
+@keyframes gaze{0%,18%,100%{transform:translate(0,0)}30%,50%{transform:translate(-26px,-5px)}62%,82%{transform:translate(24px,7px)}}
+.spokes{animation-name:spin;animation-duration:80s}
+.glint{animation-name:spin;animation-direction:reverse}
+.pupil{animation-name:pupil;animation-duration:9s}
+@keyframes pupil{0%,100%{transform:scale(.72)}50%{transform:scale(1.12)}}
+.drowsy{animation-name:drowsy;animation-duration:14s}
+@keyframes drowsy{0%,30%,100%{transform:scaleY(1)}48%,66%{transform:scaleY(.5)}84%{transform:scaleY(1)}}
+path.drowsy{vector-effect:non-scaling-stroke}
+svg .reel,svg .turn,svg .orbit,svg .spokes,svg .glint{animation-timing-function:linear}
+@keyframes thick{0%,100%{transform:scaleX(.6)}50%{transform:scaleX(2.4)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}</style><defs></defs><rect width="1000" height="1000" fill="#121212"/><rect x="210" y="420" width="580" height="350" rx="30" fill="#121212" stroke="#ecece6" stroke-width="5"/>
+<rect x="236" y="446" width="528" height="298" rx="14" fill="none" stroke="#a8a8a0" stroke-width="2.5" stroke-dasharray="10 10"/>
+<rect x="760" y="560" width="76" height="86" rx="14" fill="#121212" stroke="#ecece6" stroke-width="5"/>
+<circle cx="800" cy="603" r="13" fill="#a8a8a0"/>
+<path d="M286,476 L286,430 C276,364 330,334 380,350 C420,304 500,314 520,364 C562,352 596,388 574,432 L574,476 Z" fill="#7fff00"/>
+<line x1="322" y1="450" x2="322" y2="591.0" stroke="#7fff00" stroke-width="38" stroke-linecap="round" class="drip" style="animation-duration:10.8s;animation-delay:-8.5s"/>
+<line x1="405" y1="450" x2="405" y2="754.0" stroke="#7fff00" stroke-width="40" stroke-linecap="round" class="drip" style="animation-duration:7.2s;animation-delay:-0.8s"/>
+<line x1="482" y1="450" x2="482" y2="543.0" stroke="#7fff00" stroke-width="34" stroke-linecap="round" class="drip" style="animation-duration:10.3s;animation-delay:-6.6s"/>
+<line x1="548" y1="450" x2="548" y2="636.0" stroke="#7fff00" stroke-width="36" stroke-linecap="round" class="drip" style="animation-duration:9.7s;animation-delay:-2.8s"/>
+<circle cx="338" cy="312" r="11" fill="#7fff00" class="bob" style="animation-duration:6.8s;animation-delay:-4.9s"/>
+<circle cx="452" cy="284" r="15" fill="#7fff00" class="bob" style="animation-duration:6.7s;animation-delay:-1.3s"/>
+<circle cx="556" cy="334" r="9" fill="#7fff00" class="bob" style="animation-duration:6.3s;animation-delay:-3.1s"/>
+<circle cx="402" cy="300" r="7" fill="#7fff00" class="bob" style="animation-duration:7.2s;animation-delay:-8.0s"/>
+<ellipse cx="420" cy="786" rx="250" ry="19" fill="#7fff00" class="puddle" style="animation-duration:9s"/></svg>

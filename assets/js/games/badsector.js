@@ -33,17 +33,17 @@
 
   DG.games.badsector = {
     meta: {
-      title: 'badsector', cap: 'maze chase', rules: 'eat the bits. avoid the bad sectors. checksums make them readable.', axes: 'xy',
+      cap: 'maze chase', rules: 'eat the bits. avoid the bad sectors. checksums make them readable.', axes: 'xy',
       hint: 'press and drag anywhere to move', keytxt: 'move · eat bits as you go', keys: '← → ↑ ↓', note: 'eats as it moves. pauses when the window loses focus.',
       over: 'game over.', best: (e) => DG.fmtN(e.score), show: (e) => DG.fmtN(e.score)
     },
     create(env, seed) {
       const rnd = DG.rng(seed);
       const g = {
-        env, v: null, t: 0, over: false, score: 0, lives: 3, round: 1, power: 0, combo: 0, freeze: 1.2, port: false, cs: 20, ox: 0, oy: 0, bits: 0,
+        env, t: 0, over: false, score: 0, lives: 3, round: 1, power: 0, combo: 0, freeze: 1.2, port: false, cs: 20, ox: 0, oy: 0, bits: 0,
         dots: [], p: null, gh: [], botT: 0, flash: 0,
         resize(w, h, top) {
-          this.v = { w, h, top }; this.port = h > w * 1.05;
+          this.port = h > w * 1.05;
           const SWc = this.port ? MH : MW, SHc = this.port ? MW : MH;
           this.cs = Math.max(6, Math.floor(Math.min((w - 16) / SWc, (h - top - 10) / SHc)));
           this.ox = Math.floor((w - this.cs * SWc) / 2); this.oy = Math.floor((h - top - this.cs * SHc) / 2);
@@ -52,17 +52,16 @@
         fresh() { this.dots = MAP.map((row) => [...row].map((c) => (c === '.' ? 1 : c === 'o' ? 2 : 0))); this.bits = this.dots.flat().filter(Boolean).length; this.place(); },
         place() {
           this.p = { x: 10, y: 11, nx: 10, ny: 11, t: 0, dir: 0, want: -1, moving: false };
-          this.gh = [[9, 9], [10, 9], [11, 9], [10, 9]].map(([x, y], i) => ({ x, y, nx: x, ny: y, t: 0, dir: 0, st: 'home', timer: 1 + i * 3 + (this.round > 1 ? 0 : 0), moving: false, i }));
+          this.gh = [[9, 9], [10, 9], [11, 9], [10, 9]].map(([x, y], i) => ({ x, y, nx: x, ny: y, t: 0, dir: 0, st: 'home', timer: 1 + i * 3, moving: false, i }));
           this.power = 0; this.combo = 0; this.freeze = 1.2;
         },
         mazeDir(sd) { return (this.port ? SCREEN_PORT : SCREEN)[sd]; },
-        press(sd) { const d = this.mazeDir(sd); if (d !== undefined) this.want = d; },
+        press(sd) { const d = this.mazeDir(sd); if (d !== undefined && this.p) this.p.want = d; },
         spd() { return Math.min(1.5, 1 + .07 * (this.round - 1)); },
-        /* choose the entity's next step from the tile it is on */
-        nextFor(e, kind) {
-          const opts = [];
-          for (let d = 0; d < 4; d++) { const nx = e.x + DIRS[d][0], ny = e.y + DIRS[d][1]; const inside = kind === 'me' ? false : (e.st === 'leave' || e.st === 'back' || e.st === 'home' || (cell(e.x, e.y) === ' ' || cell(e.x, e.y) === '_')); if (open(nx, ny, kind !== 'me', inside)) opts.push(d); }
-          return opts;
+        /* the directions a bad sector may take from its tile */
+        ghostOpts(e) {
+          const c = cell(e.x, e.y), inside = e.st === 'leave' || e.st === 'back' || e.st === 'home' || c === ' ' || c === '_';
+          return [0, 1, 2, 3].filter((d) => open(e.x + DIRS[d][0], e.y + DIRS[d][1], true, inside));
         },
         stepMe(dt) {
           const p = this.p, sp = 5.3 * this.spd();
@@ -84,7 +83,7 @@
         eat() {
           const p = this.p, c = this.dots[p.y][p.x]; if (!c) return; this.dots[p.y][p.x] = 0; this.bits--;
           if (c === 1) { this.score += 10; this.env.sfx('bit'); }
-          else { this.score += 50; this.env.sfx('checksum'); this.power = 6; this.combo = 0; this.gh.forEach((q) => { if (q.st === 'chase' || q.st === 'leave') q.st = q.st === 'leave' ? 'leave' : 'read'; }); }
+          else { this.score += 50; this.env.sfx('checksum'); this.power = 6; this.combo = 0; this.gh.forEach((q) => { if (q.st === 'chase') q.st = 'read'; }); }
           if (this.bits <= 0) { this.round++; this.score += 500; this.env.sfx('wipe'); this.fresh(); }
         },
         stepGhost(q, dt) {
@@ -104,7 +103,7 @@
           }
         },
         chooseGhost(q) {
-          let opts = this.nextFor(q, 'ghost'); if (!opts.length) { q.moving = false; return; }
+          let opts = this.ghostOpts(q); if (!opts.length) { q.moving = false; return; }
           const back = (q.dir + 2) % 4, f = opts.filter((d) => d !== back); if (f.length) opts = f;
           const pp = this.p, tx = pp.x + (pp.moving ? DIRS[pp.dir][0] * (q.i === 1 ? 3 : 0) : 0), ty = pp.y + (pp.moving ? DIRS[pp.dir][1] * (q.i === 1 ? 3 : 0) : 0);
           const dist = (d, X, Y) => Math.hypot(q.x + DIRS[d][0] - X, q.y + DIRS[d][1] - Y);
@@ -179,14 +178,12 @@
           if (near && near.d < 4.5) pick = opts.slice().sort((a, b) => Math.hypot(p.x + DIRS[b][0] - near.q.x, p.y + DIRS[b][1] - near.q.y) - Math.hypot(p.x + DIRS[a][0] - near.q.x, p.y + DIRS[a][1] - near.q.y))[0];
           else if (p.want < 0 || Math.random() < .35) pick = opts[Math.floor(Math.random() * opts.length)];
           else return;
-          this.want = pick; this.p.want = pick;
+          p.want = pick;
         },
         hud() { return [DG.fmtN(this.score) + ' · bits left ' + this.bits, this.power > 0 ? 'checksum: sectors readable.' : 'lives ' + '■'.repeat(Math.max(0, this.lives))]; },
         result() { return DG.fmtN(this.score) + ' · round ' + this.round; },
         entry() { return this.score > 0 ? { tag: '', date: '', score: this.score } : null; }
       };
-      /* the runner calls press(); keep the want on the player */
-      const press = g.press; g.press = function (sd) { press.call(this, sd); if (this.p) this.p.want = this.want; };
       return g;
     }
   };

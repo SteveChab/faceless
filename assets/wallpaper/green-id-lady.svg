@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000" role="img" aria-label="green id lady artwork by dithereal: an eye whose chartreuse iris is a sixteen-step sequencer, every fourth step accented"><style>svg [class]{transform-box:fill-box;transform-origin:center;animation-iteration-count:infinite;animation-timing-function:ease-in-out}
+.pivot{animation-name:pivot;animation-direction:alternate}
+@keyframes pivot{from{transform:rotate(calc(var(--d) * -1))}to{transform:rotate(var(--d))}}
+.fade{animation-name:fade}
+@keyframes fade{50%{opacity:.35}}
+.swell{animation-name:swell}
+@keyframes swell{0%,100%{transform:scale(.55)}50%{transform:scale(1.2)}}
+.sweep{animation-name:sweep}
+@keyframes sweep{0%,100%{opacity:.25}50%{opacity:1}}
+.glow{animation-name:glow}
+@keyframes glow{0%,100%{filter:drop-shadow(0 0 0 #7fff00)}50%{filter:drop-shadow(0 0 7px #7fff00)}}
+.lid{animation-name:lid;animation-duration:8s}
+@keyframes lid{0%,62%,100%{transform:scaleY(1)}70%,80%{transform:scaleY(.03)}90%{transform:scaleY(1)}}
+path.lid{vector-effect:non-scaling-stroke}
+.ripple{animation-name:ripple;animation-duration:6s}
+@keyframes ripple{0%,100%{transform:scaleY(.7)}50%{transform:scaleY(1.2)}}
+.reel{animation-name:spin;animation-timing-function:linear}
+@keyframes spin{to{transform:rotate(360deg)}}
+.turn{animation-name:spinfrom;animation-timing-function:linear}
+@keyframes spinfrom{from{transform:rotate(var(--a))}to{transform:rotate(calc(var(--a) + 360deg))}}
+.dust{animation-name:dust}
+@keyframes dust{0%,100%{transform:translate(0,0);opacity:.2}50%{transform:translate(var(--dx),var(--dy));opacity:1}}
+.fur{animation-name:fur;animation-direction:alternate}
+@keyframes fur{from{transform:rotate(calc(var(--d) * -1)) scale(1)}to{transform:rotate(var(--d)) scale(var(--s))}}
+.fur{vector-effect:non-scaling-stroke}
+.wink{animation-name:wink;animation-duration:6s}
+@keyframes wink{0%,55%,100%{transform:scaleY(1)}62%,72%{transform:scaleY(.08)}80%{transform:scaleY(1)}}
+.slice{animation-name:slice;animation-duration:8s;animation-timing-function:steps(1,end)}
+@keyframes slice{0%,90%{translate:0 0}92%{translate:var(--j) 0}94%{translate:calc(var(--j) * -.5) 0}96%{translate:calc(var(--j) * .3) 0}98%,100%{translate:0 0}}
+.flicker{animation-name:flicker;animation-timing-function:steps(1,end)}
+@keyframes flicker{0%,70%{opacity:1}72%{opacity:.2}75%{opacity:1}78%{opacity:.4}80%,100%{opacity:1}}
+.drip{animation-name:drip;transform-origin:50% 0}
+@keyframes drip{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1.12)}}
+.bob{animation-name:bob}
+@keyframes bob{0%,100%{transform:translateY(-16px)}50%{transform:translateY(16px)}}
+.puddle{animation-name:puddle}
+@keyframes puddle{0%,100%{transform:scaleX(.88)}50%{transform:scaleX(1.12)}}
+.sun{animation-name:sun;animation-duration:7s!important}
+@keyframes sun{0%,100%{transform:scale(.92);filter:drop-shadow(0 0 0 #7fff00)}50%{transform:scale(1.14);filter:drop-shadow(0 0 40px #7fff00)}}
+.ring{animation-name:ring;animation-duration:8s}
+@keyframes ring{0%,100%{opacity:.2}50%{opacity:1}}
+.twinkle{animation-name:twinkle}
+@keyframes twinkle{0%,100%{opacity:.15}50%{opacity:1}}
+.orbit{animation-name:spin}
+.thick{animation-name:thick}
+.gaze{animation-name:gaze;animation-duration:16s;transform-box:view-box}
+@keyframes gaze{0%,18%,100%{transform:translate(0,0)}30%,50%{transform:translate(-26px,-5px)}62%,82%{transform:translate(24px,7px)}}
+.spokes{animation-name:spin;animation-duration:80s}
+.glint{animation-name:spin;animation-direction:reverse}
+.pupil{animation-name:pupil;animation-duration:9s}
+@keyframes pupil{0%,100%{transform:scale(.72)}50%{transform:scale(1.12)}}
+.drowsy{animation-name:drowsy;animation-duration:14s}
+@keyframes drowsy{0%,30%,100%{transform:scaleY(1)}48%,66%{transform:scaleY(.5)}84%{transform:scaleY(1)}}
+path.drowsy{vector-effect:non-scaling-stroke}
+svg .reel,svg .turn,svg .orbit,svg .spokes,svg .glint{animation-timing-function:linear}
+@keyframes thick{0%,100%{transform:scaleX(.6)}50%{transform:scaleX(2.4)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}</style><defs><clipPath id="green_eye"><path d="M110,530 Q500,190 890,530 Q500,870 110,530 Z"/></clipPath></defs><rect width="1000" height="1000" fill="#121212"/><g clip-path="url(#green_eye)"><g class="gaze">
+<circle cx="500" cy="530" r="190" fill="none" stroke="#7fff00" stroke-width="5"/>
+<line x1="500.0" y1="426.0" x2="500.0" y2="342.0" stroke="#ecece6" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="539.8" y1="433.9" x2="563.5" y2="376.6" stroke="#7fff00" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="573.5" y1="456.5" x2="617.4" y2="412.6" stroke="#7fff00" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="596.1" y1="490.2" x2="653.4" y2="466.5" stroke="#7fff00" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="604.0" y1="530.0" x2="688.0" y2="530.0" stroke="#ecece6" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="596.1" y1="569.8" x2="653.4" y2="593.5" stroke="#7fff00" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="573.5" y1="603.5" x2="617.4" y2="647.4" stroke="#7fff00" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="539.8" y1="626.1" x2="563.5" y2="683.4" stroke="#7fff00" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="500.0" y1="634.0" x2="500.0" y2="718.0" stroke="#ecece6" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="460.2" y1="626.1" x2="436.5" y2="683.4" stroke="#7fff00" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="426.5" y1="603.5" x2="382.6" y2="647.4" stroke="#7fff00" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="403.9" y1="569.8" x2="346.6" y2="593.5" stroke="#7fff00" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="396.0" y1="530.0" x2="312.0" y2="530.0" stroke="#ecece6" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="403.9" y1="490.2" x2="346.6" y2="466.5" stroke="#7fff00" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="426.5" y1="456.5" x2="382.6" y2="412.6" stroke="#7fff00" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<line x1="460.2" y1="433.9" x2="436.5" y2="376.6" stroke="#7fff00" stroke-width="9" class="spokes" style="transform-origin:500px 530px;transform-box:view-box"/>
+<circle cx="500" cy="530" r="74" fill="#121212" stroke="#7fff00" stroke-width="6"/>
+<circle cx="474" cy="502" r="15" fill="#ecece6" class="glint" style="animation-duration:22s;transform-origin:500px 530px;transform-box:view-box"/>
+</g></g>
+<path d="M110,530 Q500,190 890,530 Q500,870 110,530 Z" fill="none" stroke="#ecece6" stroke-width="6" stroke-linejoin="round"/>
+<line x1="188.0" y1="468.8" x2="149.8" y2="432.4" stroke="#ecece6" stroke-width="5" stroke-linecap="round"/>
+<line x1="250.4" y1="429.6" x2="214.6" y2="384.3" stroke="#a8a8a0" stroke-width="5" stroke-linecap="round"/>
+<line x1="312.8" y1="399.2" x2="282.2" y2="345.2" stroke="#ecece6" stroke-width="5" stroke-linecap="round"/>
+<line x1="375.2" y1="377.4" x2="352.7" y2="316.1" stroke="#a8a8a0" stroke-width="5" stroke-linecap="round"/>
+<line x1="437.6" y1="364.4" x2="425.6" y2="298.1" stroke="#ecece6" stroke-width="5" stroke-linecap="round"/>
+<line x1="500.0" y1="360.0" x2="500.0" y2="292.0" stroke="#a8a8a0" stroke-width="5" stroke-linecap="round"/>
+<line x1="562.4" y1="364.4" x2="574.4" y2="298.1" stroke="#ecece6" stroke-width="5" stroke-linecap="round"/>
+<line x1="624.8" y1="377.4" x2="647.3" y2="316.1" stroke="#a8a8a0" stroke-width="5" stroke-linecap="round"/>
+<line x1="687.2" y1="399.2" x2="717.8" y2="345.2" stroke="#ecece6" stroke-width="5" stroke-linecap="round"/>
+<line x1="749.6" y1="429.6" x2="785.4" y2="384.3" stroke="#a8a8a0" stroke-width="5" stroke-linecap="round"/>
+<line x1="812.0" y1="468.8" x2="850.2" y2="432.4" stroke="#ecece6" stroke-width="5" stroke-linecap="round"/>
+<line x1="110" y1="530" x2="52" y2="508" stroke="#ecece6" stroke-width="6" stroke-linecap="round"/></svg>

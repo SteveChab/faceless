@@ -6,7 +6,7 @@
   const wrap = (a) => { a %= TAU; if (a > Math.PI) a -= TAU; if (a < -Math.PI) a += TAU; return a; };
   const toward = (a, b, m) => { const d = wrap(b - a); return Math.abs(d) <= m ? b : a + Math.sign(d) * m; };
 
-  function drawTank(x, X, Y, ang, tur, me, t, u, walk) {
+  function drawTank(x, X, Y, ang, tur, me, u, walk) {
     x.save(); x.translate(X, Y); x.rotate(ang); const w = 42, h = 30, tw = 8;
     for (const sy of [-h / 2 - tw / 2 + 2, h / 2 + tw / 2 - 2]) {
       const rx = -w / 2 - 3, ry = sy - tw / 2; x.fillStyle = me ? INK : PN; x.fillRect(rx, ry, w + 6, tw); x.lineWidth = 2 * u; x.strokeStyle = me ? INK : MU; x.strokeRect(rx, ry, w + 6, tw);
@@ -20,17 +20,16 @@
 
   DG.games.treads = {
     meta: {
-      title: 'treads', cap: 'tank', rules: 'left and right turn, up and down drive. the turret aims and fires on its own.', axes: 'xy',
+      cap: 'tank', rules: 'left and right turn, up and down drive. the turret aims and fires on its own.', axes: 'xy',
       hint: 'press and drag anywhere to drive and turn', keytxt: 'turn · drive', keys: '← → ↑ ↓', note: 'always firing; the turret aims itself. pauses when the window loses focus.',
       over: 'hull breached.', best: (e) => 'wave ' + e.wave, show: (e) => 'wave ' + e.wave + ' · ' + DG.fmtN(e.pts)
     },
     create(env, seed) {
       const g = {
-        env, v: null, H: 420, t: 0, over: false, wave: 0, pts: 0, hull: 5, inv: 0, wait: 0, blocks: [], en: [], shots: [], fx: [], walk: 0, trT: 0,
+        env, H: 420, t: 0, over: false, wave: 0, pts: 0, hull: 5, inv: 0, wait: 0, blocks: [], en: [], shots: [], fx: [], walk: 0, trT: 0,
         p: { x: WW / 2, y: 200, ang: -Math.PI / 2, tur: -Math.PI / 2, cd: 0 }, botT: 0, botTurn: 0,
-        resize(w, h, top) { this.v = { w, h, top }; this.H = (h - top) / (w / WW); if (!this.wave) { this.p.y = this.H / 2; this.next(); } },
+        resize(w, h, top) { this.H = (h - top) / (w / WW); if (!this.wave) { this.p.y = this.H / 2; this.next(); } },
         A() { return { x: 12, y: 4, w: WW - 24, h: this.H - 12 }; },
-        rect(b) { return b; },
         /* a wave: fresh cover, enemies spawned far from you */
         next() {
           this.wave++; const r = DG.rng(seed + this.wave * 97), A = this.A(); this.blocks = []; this.shots = [];
@@ -117,9 +116,9 @@
           const { s, H } = DG.world(x, v, WW), u = 1 / s, A = this.A(); this.H = H;
           x.lineWidth = 2 * u; x.strokeStyle = MU; x.strokeRect(A.x, A.y, A.w, A.h);
           this.blocks.forEach((b) => { if (b.hp > 0) DG.dither(x, Math.round(b.x), Math.round(b.y), b.w, b.h, .8 * b.hp / 5, 3, MU); });
-          this.en.forEach((e) => drawTank(x, e.x, e.y, e.ang, e.tur, false, this.t, u, e.walk));
+          this.en.forEach((e) => drawTank(x, e.x, e.y, e.ang, e.tur, false, u, e.walk));
           this.shots.forEach((q) => { if (q.own) { x.fillStyle = INK; x.fillRect(q.x - 3.5, q.y - 3.5, 7, 7); } else { x.lineWidth = 2 * u; x.strokeStyle = INK; x.strokeRect(q.x - 4, q.y - 4, 8, 8); } });
-          if (!this.over && (this.inv <= 0 || Math.floor(this.t * 14) % 2)) drawTank(x, this.p.x, this.p.y, this.p.ang, this.p.tur, true, this.t, u, this.walk);
+          if (!this.over && (this.inv <= 0 || Math.floor(this.t * 14) % 2)) drawTank(x, this.p.x, this.p.y, this.p.ang, this.p.tur, true, u, this.walk);
           this.fx.forEach((f) => { const k = f.t / .45, rr = 8 + k * 46; x.save(); x.beginPath(); x.arc(f.x, f.y, rr, 0, 7); x.clip(); DG.dither(x, f.x - rr, f.y - rr, rr * 2, rr * 2, 1 - k, 3, INK); x.restore(); });
         },
         /* attract mode: drive on, steer away from walls and cover, turn now and then */

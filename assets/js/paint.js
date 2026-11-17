@@ -3,7 +3,8 @@
   'use strict';
   const DS = window.DS;
   const $ = (s, r = document) => r.querySelector(s);
-  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  const { BAYER } = DS;
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   let ready = false;
 
   function init() {
@@ -48,13 +49,14 @@
     });
     const end = () => { if (drag) { drag = null; save(); } };
     cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
-    const press = (sel, key, val, fn) => document.querySelectorAll(sel).forEach((b) => b.addEventListener('click', () => { fn(b.dataset[key]); document.querySelectorAll(sel).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); }));
-    press('[data-tool]', 'tool', 0, (v) => { tool = v; });
-    press('[data-size]', 'size', 0, (v) => { size = +v; });
-    document.querySelectorAll('[data-pat]').forEach((b) => {
+    /* a group of toggle buttons: pressing one sets the value and clears the others */
+    const group = (sel, key, set) => $$(sel).forEach((b) => b.addEventListener('click', () => { set(b.dataset[key]); $$(sel).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); }));
+    group('[data-tool]', 'tool', (v) => { tool = v; });
+    group('[data-size]', 'size', (v) => { size = +v; });
+    group('[data-pat]', 'pat', (v) => { pat = v; });
+    $$('[data-pat]').forEach((b) => {
       const c = b.querySelector('canvas'), q = c.getContext('2d'); q.fillStyle = '#121212'; q.fillRect(0, 0, 20, 20); q.fillStyle = '#ECECE6';
       for (let j = 0; j < 20; j++) for (let i = 0; i < 20; i++) if (PAT[b.dataset.pat](i, j)) q.fillRect(i, j, 1, 1);
-      b.addEventListener('click', () => { pat = b.dataset.pat; document.querySelectorAll('[data-pat]').forEach((o) => o.setAttribute('aria-pressed', String(o === b))); });
     });
     const act = {
       undo: () => { if (undo.length) { redo.push(buf.slice()); buf.set(undo.pop()); } },
@@ -62,7 +64,7 @@
       new: () => DS.confirm({ head: 'start a new drawing?', sub: '0x3F · the drawing is cleared. undo brings it back.', yes: { label: 'new', fn: () => { push(); buf.fill(0); render(); save(); } } }),
       png: () => { const a = document.createElement('a'); a.download = 'dithereal-paint.png'; a.href = cv.toDataURL('image/png'); a.click(); }
     };
-    document.querySelectorAll('[data-act2]').forEach((b) => b.addEventListener('click', () => { const n = b.dataset.act2; act[n](); if (n === 'undo' || n === 'redo') { render(); save(); } }));
+    $$('[data-act2]').forEach((b) => b.addEventListener('click', () => { const n = b.dataset.act2; act[n](); if (n === 'undo' || n === 'redo') { render(); save(); } }));
     load(); render();
   }
   window.PAINT = { init };

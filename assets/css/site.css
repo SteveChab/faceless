@@ -11,8 +11,8 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans)}
-body{background:none} /* the html ground shows through, so the wallpaper (z-index:-1) can sit above it */
+html{background:var(--ground)} /* body stays transparent so the waveform (z-index:-1) shows above the html ground */
+html,body{margin:0;color:var(--ink);font-family:var(--sans)}
 a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit}
 [hidden]{display:none!important}
@@ -37,12 +37,12 @@ button{font:inherit;color:inherit}
 .meta dt{color:var(--muted)}
 .meta dd{grid-column:2/4;margin:0;overflow-wrap:anywhere}
 .rule{grid-column:1/-1;border-top:2px solid var(--muted)}
-.stack{display:contents}
 
 /* desktop icons */
 .dn{grid-column:1/2;grid-row:3;display:grid;grid-template-columns:minmax(0,1fr);row-gap:6px;align-content:start}
 .ico{display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0 8px;text-align:center;background:none;border:0;cursor:pointer;width:100%;min-height:44px;position:relative}
 .ico span{font:500 12px/1.2 var(--mono);padding:2px 4px}
+.ico svg{pointer-events:none}
 .ico:hover span{background:var(--hover)}
 .ico::after{content:"";position:absolute;left:30%;right:30%;bottom:2px;height:2px;background:transparent}
 .ico.on span{background:var(--ink);color:var(--ground)}
@@ -58,16 +58,13 @@ button{font:inherit;color:inherit}
 .bar{display:flex;align-items:center;justify-content:space-between;height:30px;padding:0 6px 0 12px;background:var(--black);color:var(--ink);font:600 13px/1 var(--sans);letter-spacing:.02em;box-shadow:inset 0 -2px 0 var(--ink);flex:none;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .bar:active{cursor:grabbing}
 .off .bar{background:var(--panel);box-shadow:inset 0 -2px 0 var(--muted)}
-.bt{display:none}
 .ctl{display:flex;gap:4px}
 .ctl button{position:relative;width:22px;height:22px;padding:0;border:2px solid currentColor;background:none;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .ctl button::after{content:"";position:absolute;inset:-11px -3px}
 .ctl svg *{stroke:currentColor}
 .ctl .x{background:var(--signal);color:var(--ground);border:0}
 .off .ctl .x{background:none;color:inherit;border:2px solid currentColor}
-.bar :focus-visible,.ctl button:focus-visible{outline:2px solid var(--ink);outline-offset:2px} /* the close button text is dark, so never use currentColor here */
 .win.max{position:fixed;left:0;right:0;top:0;bottom:var(--tk);margin:0!important;max-height:none;z-index:70!important;transform:none!important}
-/* maximized player: video sized by height so controls and links stay on screen */
 .win.max .bar{cursor:default}
 
 #w-rd{grid-column:5/11;margin-top:56px;max-height:calc(100% - 56px)}
@@ -83,6 +80,7 @@ button{font:inherit;color:inherit}
 .t td{padding:0 0 0 12px;height:36px;border-bottom:1px solid var(--line);font:500 14px/1 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .t td.f{padding:0}
 .t td.m{font:400 12px/1 var(--mono)}
+.t td.none{height:52px}
 .rowbtn{display:block;width:100%;height:36px;padding:0 0 0 12px;text-align:left;background:none;border:0;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rowbtn:focus-visible{outline-offset:-4px}
 .t tbody tr{cursor:pointer}
@@ -93,7 +91,7 @@ button{font:inherit;color:inherit}
 .t tr.lk td{color:var(--muted)}
 .foot{display:flex;justify-content:space-between;padding:8px 12px;border-top:2px solid var(--muted)}
 
-/* one-window layout: list + pane side by side; the video band closes the list */
+/* the media player: list and pane side by side; the video band closes the list */
 #w-ex,#w-gm,#w-gx,#w-pt,#w-wc{grid-column:3/13;align-self:stretch;max-height:none;min-height:0}
 #w-ex .exb{display:flex;flex-direction:row;overflow:hidden}
 .exl{flex:1 1 0;min-width:0;display:flex;flex-direction:column}
@@ -122,7 +120,7 @@ button{font:inherit;color:inherit}
 .aspin{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(18,18,18,.55);pointer-events:none}
 .aspin i{display:block;width:44px;height:44px;border:3px solid var(--muted);border-top-color:var(--ink);border-radius:50%;animation:ld .8s linear infinite}
 @keyframes ld{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.aspin i{animation:none!important;border-color:var(--ink)}}
+@media (prefers-reduced-motion:reduce){.aspin i{border-color:var(--ink)}}
 .art .btns{position:absolute;left:0;right:0;bottom:0;padding:8px;z-index:1}
 .art .btn{background:var(--ground)}
 .btn{min-width:88px;height:30px;padding:0 14px;border:2px solid var(--muted);background:none;color:var(--ink);font:600 13px/1 var(--sans);cursor:pointer}
@@ -142,6 +140,7 @@ button{font:inherit;color:inherit}
 .rdb pre{margin:0;font:400 13px/1.7 var(--mono);white-space:pre-wrap}
 .lnk{display:flex;justify-content:space-between;align-items:center;min-height:44px;border-top:1px solid var(--line);font:500 13px/1 var(--mono)}
 .lnk.na{color:var(--muted)}
+.lnk>:first-child{display:flex;align-items:center;gap:12px}
 .rdnote{font:400 13px/1.7 var(--mono);display:flex;flex-direction:column;gap:6px}
 .rdmail{width:100%;background:none;border:0;border-top:1px solid var(--line);color:var(--ink);cursor:pointer;text-align:left;padding:0}
 
@@ -178,30 +177,93 @@ button{font:inherit;color:inherit}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
+/* ---------- apps: game, paint and webcam sit in the media player's slot ---------- */
+#w-gx .wb,#w-pt .wb,#w-wc .wb{display:flex;flex-direction:row;overflow:hidden}
+.gstage{flex:1 1 0;min-width:0;position:relative;overflow:hidden;background:var(--ground)}
+.gstage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#w-gx .pane{flex:0 0 392px}
+.keys{border-top:2px solid var(--muted);display:flex;flex-direction:column}
+.keys>div{display:flex;justify-content:space-between;align-items:center;min-height:30px;font:500 13px/1 var(--sans)}
+.keys>div+div{border-top:1px solid var(--line)}
+.keys .mono{font:400 12px/1 var(--mono);color:var(--muted)}
+.keys .btn{min-width:0;height:24px;padding:0 10px}
+.btns.sm .btn.sq{width:40px;height:40px}
+.help{font:400 13px/1.45 var(--mono);color:var(--ink)} /* instructions and privacy lines: ink at 13px, not the 11px muted cap */
+.flink{background:none;border:0;padding:4px 0;font:inherit;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer;min-height:24px}
+
+/* games folder */
+.gfold{display:flex;flex-direction:column}
+.tiles{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:16px;padding:16px;min-height:0}
+.tile{display:flex;flex-direction:column;gap:8px;min-height:0;background:none;border:0;padding:0;text-align:left;cursor:pointer;color:var(--ink)}
+.tile .cv{flex:1;min-height:0;position:relative;box-shadow:inset 0 0 0 2px var(--muted);background:var(--ground)}
+.tile .cv canvas{position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);display:block}
+.tile .nm{display:flex;justify-content:space-between;align-items:baseline}
+.tile .nm b{font:600 16px/1 var(--sans)}
+.tile.on .cv{box-shadow:inset 0 0 0 2px var(--ink)}
+.tile.on .nm b{background:var(--ink);color:var(--ground);padding:2px 4px;margin-left:-4px}
+
+/* paint and webcam */
+.tools{flex:none;display:flex;flex-direction:column;gap:6px;padding:12px;border-right:2px solid var(--muted)}
+.tools .btn.sq{width:52px;height:52px}
+.tools .btn.sq svg{width:30px;height:30px}
+.tools .btn.sq svg *{fill:none;stroke:currentColor;stroke-width:2.5;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.tools .btn[aria-pressed=true],.chips .btn[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--ground)}
+.pstage,.wstage{flex:1 1 0;min-width:0;position:relative;display:flex;align-items:center;justify-content:center;background:var(--ground);padding:16px}
+.pstage canvas,.wstage canvas{display:block;width:100%;height:auto;max-width:100%;max-height:100%;image-rendering:pixelated;box-shadow:0 0 0 2px var(--muted);touch-action:none;cursor:crosshair}
+.pstage canvas{aspect-ratio:320/200}
+.wstage canvas{aspect-ratio:4/3;cursor:default}
+.ppane{flex:0 0 232px;border-left:2px solid var(--muted);padding:16px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+.ppane .grow{flex:1}
+.ppane .btn.def{height:44px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips .btn{min-width:0;padding:0 10px}
+.pats{display:grid;grid-template-columns:repeat(4,44px);gap:6px}
+.pats button{width:44px;height:44px;padding:0;border:2px solid var(--muted);background:var(--ground);cursor:pointer}
+.pats button[aria-pressed=true]{border-color:var(--ink);box-shadow:0 0 0 2px var(--ground),0 0 0 4px var(--ink)}
+.pats canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
+.range{width:100%;accent-color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.two .btn{min-width:0;width:100%;height:40px;display:flex;align-items:center;justify-content:center}
+.rec{display:inline-block;width:10px;height:10px;background:var(--ink);margin-right:6px;animation:recb 1s steps(2) infinite}
+@keyframes recb{50%{opacity:0}}
+
+/* game start and game-over screens */
+.over{position:absolute;inset:0;background:rgba(18,18,18,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px}
+.over .ovh{font:600 clamp(36px,5vw,56px)/.9 var(--sans);letter-spacing:-.04em}
+.over .nowname{font-size:20px;margin:0}
+.over .t{width:min(440px,100%);background:none}
+.over .t th{background:none}
+.over .t th:nth-child(1){width:40px}
+.over .t th:nth-child(2){width:70px}
+.over .t th:nth-child(3){width:130px}
+.over .t th:nth-child(4){width:100px}
+.over .t td{height:34px}
+.tag{display:inline-flex;gap:4px}
+.tag b{display:inline-flex;width:22px;height:26px;align-items:center;justify-content:center;box-shadow:inset 0 0 0 2px var(--ground);font:500 14px/1 var(--mono)}
+.tag b.on{background:var(--ground);color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
+
+/* screensaver: the album art, full screen; any input dismisses it */
+.saver{position:fixed;inset:0;z-index:90;background:#000;overflow:hidden;cursor:none}
+.saver:not([hidden]){animation:svin .8s ease-out}
+@keyframes svin{from{opacity:0}to{opacity:1}}
+.saver .wpw{position:absolute;inset:0;height:100%;z-index:1}
+.svtxt{position:absolute;left:40px;bottom:36px;display:flex;flex-direction:column;gap:4px;z-index:2}
+.svtxt .nowname{font-size:28px}
+.svclk{position:absolute;right:40px;top:28px;z-index:2}
+
+@media (min-width:900px){.tkb .short{display:none}.pad{display:none}.ppane.wide{flex-basis:260px}}
+
 /* ---------- mobile ---------- */
 @media (max-width:899.98px){
   :root{--tk:56px}
-  .desk{min-height:100dvh}
-  .desk{padding-bottom:0}
+  .desk{min-height:100dvh;padding-bottom:0}
   .g{height:auto;display:flex;flex-direction:column;padding:16px 16px calc(var(--tk) + 32px + env(safe-area-inset-bottom));row-gap:14px}
   .win{max-height:none;margin:0!important;transform:none!important;grid-row:auto;align-self:stretch}
+  .win.max{position:static}
   .wb,#w-ex .exb{overflow:visible}
   #w-ex{grid-column:auto}
   #w-ex .exb{flex-direction:column}
   .lscroll{overflow:visible}
-  /* pinned player: first in the window, sticks under the sticky title bar */
-  #w-ex>.bar{position:sticky;top:0;z-index:4}
-  .pane{order:-1;flex:none;position:sticky;top:48px;z-index:3;background:var(--panel);border-left:0;border-bottom:2px solid var(--muted);padding:12px;gap:10px;overflow:visible}
-  .art{aspect-ratio:16/9}
-    .pane .plinks{display:none}
-  .pane .nowwrap{display:flex;align-items:baseline;gap:10px;min-width:0}
-  .nowwrap>.cap:first-child{display:none}
-  .nowname{font-size:20px;margin:0}
-  .t th:nth-child(2){width:48px}
-  .t th:nth-child(3){width:110px}
-  .t tbody tr{scroll-margin-top:calc(48px + var(--pin,300px))}
-  .vband{flex-direction:column;gap:10px;padding:12px}
-  .vbox{width:100%;height:auto;aspect-ratio:16/9;min-width:200px}
   .wm{font-size:28px;margin:0}
   .meta,.rule{display:none}
   .dn{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:8px;row-gap:0}
@@ -209,8 +271,22 @@ button{font:inherit;color:inherit}
   .ctl .mx{display:none}
   .ctl button{width:32px;height:32px}
   .ctl button::after{inset:-6px}
-  .win.max{position:static}
+
+  /* the player is pinned first in its window, under the sticky title bar */
+  #w-ex>.bar{position:sticky;top:0;z-index:4}
+  .pane{order:-1;flex:none;position:sticky;top:48px;z-index:3;background:var(--panel);border-left:0;border-bottom:2px solid var(--muted);padding:12px;gap:10px;overflow:visible}
+  .pane .plinks{display:none}
+  .pane .nowwrap{display:flex;align-items:baseline;gap:10px;min-width:0}
+  .nowwrap>.cap:first-child{display:none}
+  .nowname{font-size:20px;margin:0}
+  .art{aspect-ratio:16/9}
+  .t th:nth-child(2){width:48px}
+  .t th:nth-child(3){width:110px}
   .t td,.rowbtn{height:36px}
+  .t tbody tr{scroll-margin-top:calc(48px + var(--pin,300px))}
+  .vband{flex-direction:column;gap:10px;padding:12px}
+  .vbox{width:100%;height:auto;aspect-ratio:16/9;min-width:200px}
+
   .tk{position:fixed;left:0;right:0;bottom:0;height:calc(var(--tk) + env(safe-area-inset-bottom));padding:0 16px env(safe-area-inset-bottom) 88px;display:flex;gap:8px}
   .orb{left:16px;bottom:calc(env(safe-area-inset-bottom) + 2px)}
   .tkw{flex:1;min-width:0;display:flex;gap:6px}
@@ -219,50 +295,24 @@ button{font:inherit;color:inherit}
   .tkb .long{display:none}
   .clock{flex:none}
   .tray{display:none}
-}
-@media (min-width:900px){.tkb .short{display:none}}
 
+  /* games folder: a normal window, tiles keep a shape */
+  .tiles{grid-template-rows:none;gap:12px;padding:12px}
+  .tile .cv{flex:none;aspect-ratio:4/3}
+  .tile .nm{flex-direction:column;align-items:flex-start;gap:4px}
+  .gfold .foot{flex-direction:column;gap:4px}
 
-
-/* windows that sit where the media player sits */
-#w-gx .wb{display:flex;flex-direction:row;overflow:hidden}
-.gstage{flex:1 1 0;min-width:0;position:relative;background:var(--ground)}
-.gstage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-#w-gx .pane{flex:0 0 392px}
-.ytph-unused{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted)}
-.ytph svg{width:52px;height:36px}
-.keys{border-top:2px solid var(--muted);display:flex;flex-direction:column}
-.keys div{display:flex;justify-content:space-between;align-items:center;min-height:30px;font:500 13px/1 var(--sans)}
-.keys div+div{border-top:1px solid var(--line)}
-.keys .mono{font:400 12px/1 var(--mono);color:var(--muted)}
-.btns.sm .btn.sq{width:40px;height:40px}
-/* games folder */
-.tiles{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:16px;padding:16px;min-height:0}
-.tile{display:flex;flex-direction:column;gap:8px;min-height:0;background:none;border:0;padding:0;text-align:left;cursor:pointer;color:var(--ink)}
-.tile .cv{flex:1;min-height:0;position:relative;box-shadow:inset 0 0 0 2px var(--muted);background:var(--ground)}
-.tile .cv canvas{position:absolute;inset:2px;width:calc(100% - 4px);height:calc(100% - 4px);display:block}
-.tile.on .cv{box-shadow:inset 0 0 0 2px var(--ink)}
-.tile .nm{display:flex;justify-content:space-between;align-items:baseline}
-.tile .nm b{font:600 16px/1 var(--sans)}
-.tile.on .nm b{background:var(--ink);color:var(--ground);padding:2px 4px;margin-left:-4px}
-.gfold{display:flex;flex-direction:column!important}
-/* screensaver */
-.saver{position:fixed;inset:0;background:#000;overflow:hidden}
-.saver .wp{height:100%;opacity:1}
-.saver .wpw{height:100%}
-.svtxt{position:absolute;left:40px;bottom:36px;display:flex;flex-direction:column;gap:4px}
-.svtxt .nowname{font-size:28px}
-.svclk{position:absolute;right:40px;top:28px}
-/* phone game window: maximized. game first, drag pad under it, the media player below the fold */
-@media (max-width:899.98px){
-  #w-gx{position:fixed;left:0;right:0;top:0;bottom:var(--tk);z-index:70}
-  #w-gx .wb{flex-direction:column;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+  /* game, paint and webcam open maximized over the page. game: stage, drag pad, then the media player below the fold */
+  #w-gx,#w-pt,#w-wc{position:fixed;left:0;right:0;top:0;bottom:var(--tk);z-index:70}
+  #w-gx .wb,#w-pt .wb,#w-wc .wb{flex-direction:column;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
   .gstage{flex:none;height:min(54vh,450px)}
   .pad{flex:none;height:calc(100dvh - var(--tk) - 48px - min(54vh,450px));min-height:200px;position:relative;border-top:2px solid var(--muted);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;overflow:hidden}
   .pad .ar{position:absolute;width:52px;height:52px;display:flex;align-items:center;justify-content:center;font:600 34px/1 var(--sans);color:var(--ink)}
   .pad .ar.on{background:var(--ink);color:var(--ground)}
-  .pad .u{top:12px;left:50%;transform:translateX(-50%)}.pad .d{bottom:34px;left:50%;transform:translateX(-50%)}
-  .pad .l{left:12px;top:50%;transform:translateY(-50%)}.pad .r{right:12px;top:50%;transform:translateY(-50%)}
+  .pad .u{top:12px;left:50%;transform:translateX(-50%)}
+  .pad .d{bottom:34px;left:50%;transform:translateX(-50%)}
+  .pad .l{left:12px;top:50%;transform:translateY(-50%)}
+  .pad .r{right:12px;top:50%;transform:translateY(-50%)}
   .pad .hint{position:absolute;left:0;right:0;bottom:14px;text-align:center}
   .pad .ring{position:absolute;width:76px;height:76px;margin:-38px 0 0 -38px;box-shadow:inset 0 0 0 2px var(--muted);border-radius:50%;display:none;pointer-events:none}
   .pad .knob{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;background:var(--ink);border-radius:50%;display:none;pointer-events:none}
@@ -270,87 +320,22 @@ button{font:inherit;color:inherit}
   #w-gx .pane{order:1;position:static;flex:none;padding:16px;gap:12px;border-left:0;border-top:2px solid var(--muted)}
   #w-gx .pane::before{content:"media player";font:500 11px/1 var(--mono);color:var(--muted)}
   #w-gx .vbox{width:100%;height:auto;aspect-ratio:16/9}
-  #w-gx .pane>div:has(.seg){display:none}
-}
-@media (min-width:900px){.pad{display:none}}
-/* ---------- desktop icons: six fit the column ---------- */
-/* ---------- paint ---------- */
-#w-pt .wb,#w-wc .wb{display:flex;flex-direction:row;overflow:hidden}
-.tools{flex:none;display:flex;flex-direction:column;gap:6px;padding:12px;border-right:2px solid var(--muted)}
-.tools .btn.sq{width:52px;height:52px}
-.tools .btn.sq svg{width:30px;height:30px}
-.tools .btn.sq svg *{fill:none;stroke:currentColor;stroke-width:2.5;vector-effect:non-scaling-stroke;stroke-linejoin:round}
-.tools .btn[aria-pressed=true],.chips .btn[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--ground)}
-.pstage,.wstage{flex:1 1 0;min-width:0;position:relative;display:flex;align-items:center;justify-content:center;background:var(--ground);padding:16px}
-.pstage canvas,.wstage canvas{display:block;max-width:100%;max-height:100%;image-rendering:pixelated;box-shadow:0 0 0 2px var(--muted);touch-action:none;cursor:crosshair}
-.pstage canvas{aspect-ratio:320/200;width:100%;height:auto}
-.wstage canvas{aspect-ratio:4/3;width:100%;height:auto;cursor:default}
-.ppane{flex:0 0 232px;border-left:2px solid var(--muted);padding:16px;display:flex;flex-direction:column;gap:10px;overflow:auto}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chips .btn{min-width:0;padding:0 10px}
-.pats{display:grid;grid-template-columns:repeat(4,44px);gap:6px}
-.pats button{width:44px;height:44px;padding:0;border:2px solid var(--muted);background:var(--ground);cursor:pointer}
-.pats button[aria-pressed=true]{border-color:var(--ink);box-shadow:0 0 0 2px var(--ground),0 0 0 4px var(--ink)}
-.pats canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
-.ppane .grow{flex:1}
-.range{width:100%;accent-color:var(--ink)}
-.rec{display:inline-block;width:10px;height:10px;background:var(--ink);margin-right:6px;animation:recb 1s steps(2) infinite}
-@keyframes recb{50%{opacity:0}}
-/* ---------- high scores ---------- */
-.over{position:absolute;inset:0;background:rgba(18,18,18,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px}
-.over .ovh{font:600 clamp(36px,5vw,56px)/.9 var(--sans);letter-spacing:-.04em}
-.over .t{width:min(440px,100%);background:none}
-.over .t th{background:none}
-.over .t td{height:34px}
-.tag{display:inline-flex;gap:4px}
-.tag b{display:inline-flex;width:22px;height:26px;align-items:center;justify-content:center;box-shadow:inset 0 0 0 2px var(--ground);font:500 14px/1 var(--mono)}
-.tag b.on{background:var(--ground);color:var(--ink)}
-@media (max-width:899.98px){
-  #w-pt,#w-wc{position:fixed;left:0;right:0;top:0;bottom:var(--tk);z-index:70}
-  #w-pt .wb,#w-wc .wb{flex-direction:column;overflow-y:auto}
+  #w-gx .prog{display:none}
+
   .pstage,.wstage{flex:none;padding:12px}
-  .tools{flex-direction:row;flex-wrap:wrap;border-right:0;border-top:2px solid var(--muted);padding:12px 16px}
+  #w-pt .pstage,#w-wc .wstage{order:0}
+  #w-pt .tools{order:1;flex-direction:row;flex-wrap:wrap;border-right:0;border-top:2px solid var(--muted);padding:12px 16px}
   .ppane{flex:none;border-left:0;border-top:2px solid var(--muted);padding:12px 16px}
+  #w-pt .ppane{order:2}
+  #w-wc .ppane{order:1}
   .pats{grid-template-columns:repeat(6,44px)}
+
+  .over{gap:8px;padding:12px}
   .over .ovh{font-size:40px}
+  .over .nowname{font-size:18px}
+  .over .t td{height:28px}
+  .over .t th{padding-top:6px;padding-bottom:6px}
+
+  .svtxt{left:16px;bottom:calc(var(--tk) + 20px)}
+  .svclk{right:16px;top:20px}
 }
-@media (max-width:899.98px){
-  .tile .nm{flex-direction:column;align-items:flex-start;gap:4px}
-  .gfold .foot{flex-direction:column;gap:4px}
-  .tiles{gap:12px;padding:12px}
-}
-
-.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.two .btn{min-width:0;width:100%;height:40px;display:flex;align-items:center;justify-content:center}
-
-/* help lines: ink at 13px, not the 11px muted cap (owner, 2026-11-16) */
-.help{font:400 13px/1.45 var(--mono);color:var(--ink)}
-
-/* ---------- suite additions ---------- */
-.ico svg{pointer-events:none}
-.flink{background:none;border:0;padding:4px 0;font:inherit;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer;min-height:24px}
-.tile .cv canvas{image-rendering:auto}
-.tile:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-.gstage{overflow:hidden}
-#w-gx .keys .btn[aria-pressed=false]{background:none;color:var(--ink);border-color:var(--muted)}
-.over .t td,.over .t th{padding-left:12px}
-.over .t tr.sel td{background:var(--ink);color:var(--ground)}
-.over .tag b{box-shadow:inset 0 0 0 2px var(--ground)}
-.over .tag b.on{background:var(--ground);color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
-@media (min-width:900px){.ppane.wide{flex-basis:260px}}
-.ppane .btn.def{height:44px}
-/* screensaver: the album art, full screen. any input dismisses it */
-.saver{position:fixed;inset:0;z-index:90;background:#000;overflow:hidden;cursor:none}
-.saver:not([hidden]){animation:svin .8s ease-out}
-@keyframes svin{from{opacity:0}to{opacity:1}}
-.saver .artsvg{position:absolute;inset:0}
-.saver .wpw{position:absolute;inset:0;height:100%;z-index:1}
-.svtxt{position:absolute;left:40px;bottom:36px;display:flex;flex-direction:column;gap:4px;z-index:2}
-.svtxt .nowname{font-size:28px}
-.svclk{position:absolute;right:40px;top:28px;z-index:2}
-@media (max-width:899.98px){.svtxt{left:16px;bottom:calc(var(--tk) + 20px)}.svclk{right:16px;top:20px}}
-@media (prefers-reduced-motion:reduce){.saver:not([hidden]){animation:none}}
-/* phone: the games folder is a normal window; tiles keep a shape */
-@media (max-width:899.98px){.tile .cv{flex:none;aspect-ratio:4/3}.tiles{grid-template-rows:none}}
-@media (max-width:899.98px){#w-pt .pstage{order:0}#w-pt .tools{order:1}#w-pt .ppane{order:2}#w-wc .wstage{order:0}#w-wc .ppane{order:1}}
-@media (max-width:899.98px){.over{gap:8px;padding:12px}.over .t td{height:28px}.over .t th{padding-top:6px;padding-bottom:6px}.over .nowname{font-size:18px!important}}
