@@ -158,8 +158,8 @@
     r.showOverlay = () => {
       over.hidden = false;
       if (r.st === 'start') {
-        over.innerHTML = '<span class="cap">d:\\games\\' + name + '.exe</span><div class="ovh">' + name + '</div><span class="cap">' + m.cap + ' · ' + m.rules + '</span>' + table(scores(name), -1) +
-          '<div class="nowname">press an arrow to start.</div><span class="cap">on a phone: drag, or tap an arrow</span>';
+        over.innerHTML = '<span class="cap">d:\\games\\' + name + '.exe</span><div class="ovh">' + name + '</div><span class="cap">' + m.cap + ' · ' + m.rules + '</span>' + (scores(name).length ? table(scores(name), -1) : '') +
+          '<div class="nowname">press any arrow to start.</div><span class="cap">on a phone: drag, or tap an arrow</span>';
       } else if (r.st === 'tag' || r.st === 'done') {
         const rank = r.pend ? ' · new best #' + (r.pend.idx + 1) : '';
         const lst = r.pend ? r.pend.all : scores(name);
@@ -207,7 +207,7 @@
     };
     r.key = (e, down) => {
       const code = e.code, k = DIRKEY[e.key] || (m.p2 && (code === 'KeyW' || code === 'KeyS') ? (code === 'KeyW' ? 'w' : 's') : ALIAS[code]);
-      if (!k) return false;
+      if (!k) { if (down && !e.repeat && r.st === 'start' && (code === 'Space' || code === 'Enter')) { r.begin(); return true; } return false; }
       if (m.p2 && (code === 'KeyA' || code === 'KeyD')) return false;
       if (down) { if (!e.repeat) { r.keys[k] = 1; r.onDir(k === 'w' ? 'u' : k === 's' ? 'd' : k); } else if (r.st === 'tag' && (k === 'u' || k === 'd')) r.onDir(k); }
       else r.keys[k] = 0;

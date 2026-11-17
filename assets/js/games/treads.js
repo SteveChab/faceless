@@ -14,6 +14,9 @@
     }
     if (me) { x.fillStyle = C; x.fillRect(-w / 2, -h / 2, w, h); x.lineWidth = 1.5 * u; x.strokeStyle = K; x.strokeRect(-w / 2, -h / 2, w, h); }
     else { x.fillStyle = GR; x.fillRect(-w / 2, -h / 2, w, h); x.save(); x.beginPath(); x.rect(-w / 2, -h / 2, w, h); x.clip(); DG.hatch(x, -w / 2, -h / 2, w, h, 7, u, MU); x.restore(); x.lineWidth = 2 * u; x.strokeStyle = INK; x.strokeRect(-w / 2, -h / 2, w, h); }
+    /* front: a solid wedge pointing forward and a hatched rear, so the hull reads one way */
+    x.fillStyle = me ? K : INK; x.beginPath(); x.moveTo(w / 2 + 8, 0); x.lineTo(w / 2 - 6, -h / 2 + 3); x.lineTo(w / 2 - 6, h / 2 - 3); x.closePath(); x.fill();
+    x.fillStyle = me ? K : INK; for (const ky of [-9, -3, 3, 9]) x.fillRect(-w / 2, ky - 1, 6, 2);
     x.rotate(tur - ang); x.beginPath(); x.arc(0, 0, 9, 0, 7); x.fillStyle = me ? K : GR; x.fill(); if (!me) { x.lineWidth = 2 * u; x.strokeStyle = INK; x.stroke(); }
     x.fillStyle = me ? K : INK; x.fillRect(6, -2.5, 22, 5); x.restore();
   }

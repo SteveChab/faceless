@@ -305,8 +305,8 @@ button{font:inherit;color:inherit}
   /* game, paint and webcam open maximized over the page. game: stage, drag pad, then the media player below the fold */
   #w-gx,#w-pt,#w-wc{position:fixed;left:0;right:0;top:0;bottom:var(--tk);z-index:70}
   #w-gx .wb,#w-pt .wb,#w-wc .wb{flex-direction:column;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
-  .gstage{flex:none;height:min(54vh,450px)}
-  .pad{flex:none;height:calc(100dvh - var(--tk) - 48px - min(54vh,450px));min-height:200px;position:relative;border-top:2px solid var(--muted);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;overflow:hidden}
+  .gstage{flex:none;height:max(220px,calc(100dvh - var(--tk) - 48px - 210px))}
+  .pad{flex:none;height:210px;position:relative;border-top:2px solid var(--muted);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;overflow:hidden}
   .pad .ar{position:absolute;width:52px;height:52px;display:flex;align-items:center;justify-content:center;font:600 34px/1 var(--sans);color:var(--ink)}
   .pad .ar.on{background:var(--ink);color:var(--ground)}
   .pad .u{top:12px;left:50%;transform:translateX(-50%)}
@@ -323,10 +323,22 @@ button{font:inherit;color:inherit}
   #w-gx .prog{display:none}
 
   .pstage,.wstage{flex:none;padding:12px}
-  #w-pt .pstage,#w-wc .wstage{order:0}
-  #w-pt .tools{order:1;flex-direction:row;flex-wrap:wrap;border-right:0;border-top:2px solid var(--muted);padding:12px 16px}
+  #w-pt .wb{overflow:hidden}
+  #w-pt .pstage{order:0;flex:1 1 0;min-height:0;padding:8px 12px}
+  #w-pt .pstage canvas{width:min(100%,calc((100dvh - 380px) * 1.6));height:auto;max-height:none}
+  #w-wc .wstage{order:0}
+  #w-pt .tools{order:1;flex:none;flex-direction:row;flex-wrap:nowrap;justify-content:space-between;border-right:0;border-top:2px solid var(--muted);padding:8px 12px 0}
+  #w-pt .tools .btn.sq{width:44px;height:40px}
+  #w-pt .tools .btn.sq svg{width:24px;height:24px}
   .ppane{flex:none;border-left:0;border-top:2px solid var(--muted);padding:12px 16px}
-  #w-pt .ppane{order:2}
+  #w-pt .ppane{order:2;border-top:0;padding:8px 12px 10px;gap:8px;overflow:visible}
+  #w-pt .ppane .cap,#w-pt .ppane .help,#w-pt .ppane .grow{display:none}
+  #w-pt .ppane .btn{height:34px;padding:0 8px}
+  #w-pt .ppane .btn.def{align-self:stretch}
+  #w-pt .pats{grid-template-columns:repeat(8,minmax(0,1fr));gap:4px}
+  #w-pt .pats button{width:auto;height:34px}
+  #w-pt .ppane .chips{display:flex;gap:6px}
+  #w-pt .ppane .chips .btn{flex:1}
   #w-wc .ppane{order:1}
   .pats{grid-template-columns:repeat(6,44px)}
 
