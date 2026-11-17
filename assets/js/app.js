@@ -625,7 +625,9 @@
       const t = S.tracks[S.sel];
       S.dur = t ? t.secs || 0 : 0;
       renderStatus(); renderReadme(); render();
-      if (document.body.dataset.missing) showDlg({ head: 'file not found.', sub: '0x00 · that path is not on this drive.', src: 'system' });
+      const w = S.tracks.find((t) => t.slug === want);
+      if (w && isLocked(w)) showDlg({ head: 'file is locked.', sub: '0x3F · unlocks on its release date.', src: 'system' });
+      else if (document.body.dataset.missing) showDlg({ head: 'file not found.', sub: '0x00 · that path is not on this drive.', src: 'system' });
     }).catch(() => {
       showDlg({ head: 'drive not responding.', sub: '0x00 · index could not be read.', src: 'system' });
     });
