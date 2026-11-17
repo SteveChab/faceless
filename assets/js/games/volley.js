@@ -76,7 +76,7 @@
         },
         hud() { return ['first to 11', this.two ? 'two players' : 'rally ' + this.returns]; },
         result() { return (this.my > this.opp ? 'you win ' : 'they win ') + this.my + '–' + this.opp; },
-        entry() { return this.noScore ? null : { tag: '', date: '', score: (this.my - this.opp) * 1000 + this.my, my: this.my, opp: this.opp }; }
+        entry() { return this.noScore || this.opp > this.my ? null : { tag: '', date: '', score: (this.my - this.opp) * 1000 + this.my, my: this.my, opp: this.opp }; }
       };
       return g;
     }
