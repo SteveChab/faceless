@@ -19,7 +19,7 @@
   const SHORT = { ex: 'player', gm: 'games', gx: 'game', pt: 'paint', wc: 'webcam', rd: 'readme', sy: 'err' };
   const WK = ['ex', 'gm', 'gx', 'pt', 'wc', 'rd'];      /* every window but the dialog */
   const SLOT = ['ex', 'gm', 'gx', 'pt', 'wc'];           /* windows that share the media player's grid slot */
-  const FIXM = ['gx', 'pt', 'wc'];                       /* phone: these open maximized over the page, one at a time */
+  const FIXM = ['ex', 'gx', 'pt', 'wc'];                       /* phone: these open maximized over the page, one at a time */
   const ICOOF = { gx: 'gm' };                            /* a game has no icon: focus goes back to the games icon */
   const ICON_PLAY = 'M3 1l10 6-10 6z';
   const ICON_PAUSE = 'M3 1h3v12H3zM8 1h3v12H8z';

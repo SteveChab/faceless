@@ -40,7 +40,7 @@ button{font:inherit;color:inherit}
 
 /* desktop icons */
 .dn{grid-column:1/2;grid-row:3;display:grid;grid-template-columns:minmax(0,1fr);row-gap:6px;align-content:start}
-.ico{display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0 8px;text-align:center;background:none;border:0;cursor:pointer;width:100%;min-height:44px;position:relative}
+.ico{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0 8px;text-align:center;background:none;border:0;cursor:pointer;width:100%;min-height:44px;position:relative}
 .ico span{font:500 12px/1.2 var(--mono);padding:2px 4px}
 .ico svg{pointer-events:none}
 .ico:hover span{background:var(--hover)}
@@ -55,7 +55,7 @@ button{font:inherit;color:inherit}
 .win{background:var(--panel);box-shadow:0 0 0 2px var(--ink);display:flex;flex-direction:column;min-width:0;align-self:start;grid-row:3;max-height:100%}
 .wb{flex:1 1 auto;min-height:0;overflow:auto}
 .win.off{box-shadow:0 0 0 2px var(--muted)}
-.bar{display:flex;align-items:center;justify-content:space-between;height:30px;padding:0 6px 0 12px;background:var(--black);color:var(--ink);font:600 13px/1 var(--sans);letter-spacing:.02em;box-shadow:inset 0 -2px 0 var(--ink);flex:none;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.bar{display:flex;align-items:center;justify-content:space-between;height:36px;padding:6px 6px 8px 12px;background:var(--black);color:var(--ink);font:600 13px/1 var(--sans);letter-spacing:.02em;box-shadow:inset 0 -2px 0 var(--ink);flex:none;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .bar:active{cursor:grabbing}
 .off .bar{background:var(--panel);box-shadow:inset 0 -2px 0 var(--muted)}
 .ctl{display:flex;gap:4px}
@@ -267,14 +267,13 @@ button{font:inherit;color:inherit}
   .wm{font-size:28px;margin:0}
   .meta,.rule{display:none}
   .dn{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:8px;row-gap:0}
-  .bar{height:48px;padding:0 8px 0 12px;cursor:default;touch-action:auto}
+  .bar{height:48px;padding:7px 7px 9px 12px;cursor:default;touch-action:auto}
   .ctl .mx{display:none}
   .ctl button{width:32px;height:32px}
   .ctl button::after{inset:-6px}
 
   /* the player is pinned first in its window, under the sticky title bar */
-  #w-ex>.bar{position:sticky;top:0;z-index:4}
-  .pane{order:-1;flex:none;position:sticky;top:48px;z-index:3;background:var(--panel);border-left:0;border-bottom:2px solid var(--muted);padding:12px;gap:10px;overflow:visible}
+  .pane{order:-1;flex:none;position:sticky;top:0;z-index:3;background:var(--panel);border-left:0;border-bottom:2px solid var(--muted);padding:12px;gap:10px;overflow:visible}
   .pane .plinks{display:none}
   .pane .nowwrap{display:flex;align-items:baseline;gap:10px;min-width:0}
   .nowwrap>.cap:first-child{display:none}
@@ -283,7 +282,7 @@ button{font:inherit;color:inherit}
   .t th:nth-child(2){width:48px}
   .t th:nth-child(3){width:110px}
   .t td,.rowbtn{height:36px}
-  .t tbody tr{scroll-margin-top:calc(48px + var(--pin,300px))}
+  .t tbody tr{scroll-margin-top:var(--pin,300px)}
   .vband{flex-direction:column;gap:10px;padding:12px}
   .vbox{width:100%;height:auto;aspect-ratio:16/9;min-width:200px}
 
@@ -303,8 +302,8 @@ button{font:inherit;color:inherit}
   .gfold .foot{flex-direction:column;gap:4px}
 
   /* game, paint and webcam open maximized over the page. game: stage, drag pad, then the media player below the fold */
-  #w-gx,#w-pt,#w-wc{position:fixed;left:0;right:0;top:0;bottom:var(--tk);z-index:70}
-  #w-gx .wb,#w-pt .wb,#w-wc .wb{flex-direction:column;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+  #w-ex,#w-gx,#w-pt,#w-wc{position:fixed;left:0;right:0;top:0;bottom:var(--tk);z-index:70}
+  #w-ex .exb,#w-gx .wb,#w-pt .wb,#w-wc .wb{flex-direction:column;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
   .gstage{flex:none;height:max(220px,calc(100dvh - var(--tk) - 48px - 210px))}
   .pad{flex:none;height:210px;position:relative;border-top:2px solid var(--muted);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;overflow:hidden}
   .pad .ar{position:absolute;width:52px;height:52px;display:flex;align-items:center;justify-content:center;font:600 34px/1 var(--sans);color:var(--ink)}
