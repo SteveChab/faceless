@@ -54,8 +54,8 @@
       const raw = d.tracks || [], al = {}, first = {};
       raw.forEach((t, i) => { const r = unlockAt(t); if (!(t.album in first)) first[t.album] = i; al[t.album] = Math.max(al[t.album] || 0, r === Infinity ? 1e15 : r); });
       const now = Date.now(), out = (a) => (al[a] > now ? 1 : 0);
-      /* released albums first, then unreleased; each group newest first */
-      const sorted = raw.map((t, i) => [t, i]).sort((a, b) => (out(a[0].album) - out(b[0].album)) || (al[b[0].album] - al[a[0].album]) || (first[a[0].album] - first[b[0].album]) || (a[1] - b[1])).map((x) => x[0]);
+      /* released albums first (newest first), then unreleased (next to drop first) */
+      const sorted = raw.map((t, i) => [t, i]).sort((a, b) => (out(a[0].album) - out(b[0].album)) || (out(a[0].album) ? al[a[0].album] - al[b[0].album] : al[b[0].album] - al[a[0].album]) || (first[a[0].album] - first[b[0].album]) || (a[1] - b[1])).map((x) => x[0]);
       S.tracks = sorted.map((t) => {
         let s = slugify(t.name);
         if (seen[s]) { seen[s] += 1; s = s + '-' + seen[s]; } else seen[s] = 1;
